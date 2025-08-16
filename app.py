@@ -4,21 +4,34 @@ from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, flash, g
 from werkzeug.utils import secure_filename
 import uuid
+from flask_wtf.csrf import CSRFProtect
+from flask_wtf import FlaskForm
+from wtforms import StringField, TextAreaField, SelectField, SubmitField, FileField
+from wtforms.validators import DataRequired, Length
+from config import Config
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'fdsgs65433546hggfh!'
-app.config['UPLOAD_FOLDER'] = 'static/uploads'
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+app.config.from_object(Config)
+csrf = CSRFProtect(app)
 
 # Ensure upload directory exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-DATABASE = 'content.db'
+class PostForm(FlaskForm):
+    title = StringField('Title', validators=[DataRequired(), Length(min=2, max=100)])
+    content = TextAreaField('Content', validators=[DataRequired()])
+    excerpt = StringField('Excerpt', validators=[Length(max=200)])
+    post_type = SelectField('Type', choices=[('article', 'Article'), ('story', 'Story')], validators=[DataRequired()])
+    image = FileField('Image')
+    submit = SubmitField('Publish')
+
+class DeleteForm(FlaskForm):
+    submit = SubmitField('Delete')
 
 def get_db():
     db = getattr(g, '_database', None)
     if db is None:
-        db = g._database = sqlite3.connect(DATABASE)
+        db = g._database = sqlite3.connect(app.config['DATABASE'])
         db.row_factory = sqlite3.Row
     return db
 
@@ -86,39 +99,38 @@ def view_post(post_id):
     if post is None:
         flash('Post not found.', 'error')
         return redirect(url_for('index'))
-    return render_template('post.html', post=post)
+    form = DeleteForm()
+    return render_template('post.html', post=post, form=form)
 
 @app.route('/create', methods=['GET', 'POST'])
 def create_post():
-    if request.method == 'POST':
-        title = request.form['title']
-        content = request.form['content']
-        excerpt = request.form['excerpt']
-        post_type = request.form['post_type']
+    form = PostForm()
+    if form.validate_on_submit():
+        title = form.title.data
+        content = form.content.data
+        excerpt = form.excerpt.data
+        post_type = form.post_type.data
         
         # Handle file upload
         image_filename = None
-        if 'image' in request.files:
-            file = request.files['image']
-            if file and file.filename != '' and allowed_file(file.filename):
+        if form.image.data:
+            file = form.image.data
+            if allowed_file(file.filename):
                 # Generate unique filename
-                filename = str(uuid.uuid4()) + '.' + file.filename.rsplit('.', 1)[1].lower()
+                filename = secure_filename(str(uuid.uuid4()) + '.' + file.filename.rsplit('.', 1)[1].lower())
                 file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
                 image_filename = filename
         
-        if title and content:
-            db = get_db()
-            db.execute('''
-                INSERT INTO posts (title, content, excerpt, image_filename, post_type)
-                VALUES (?, ?, ?, ?, ?)
-            ''', (title, content, excerpt, image_filename, post_type))
-            db.commit()
-            flash('Post created successfully!', 'success')
-            return redirect(url_for('index'))
-        else:
-            flash('Title and content are required.', 'error')
+        db = get_db()
+        db.execute('''
+            INSERT INTO posts (title, content, excerpt, image_filename, post_type)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (title, content, excerpt, image_filename, post_type))
+        db.commit()
+        flash('Post created successfully!', 'success')
+        return redirect(url_for('index'))
     
-    return render_template('create.html')
+    return render_template('create.html', form=form)
 
 @app.route('/edit/<int:post_id>', methods=['GET', 'POST'])
 def edit_post(post_id):
@@ -129,62 +141,62 @@ def edit_post(post_id):
         flash('Post not found.', 'error')
         return redirect(url_for('index'))
     
-    if request.method == 'POST':
-        title = request.form['title']
-        content = request.form['content']
-        excerpt = request.form['excerpt']
-        post_type = request.form['post_type']
+    form = PostForm(obj=post)
+
+    if form.validate_on_submit():
+        title = form.title.data
+        content = form.content.data
+        excerpt = form.excerpt.data
+        post_type = form.post_type.data
         
-        # Handle file upload
-        image_filename = post['image_filename']  # Keep existing image by default
-        if 'image' in request.files:
-            file = request.files['image']
-            if file and file.filename != '' and allowed_file(file.filename):
-                # Delete old image if it exists
+        image_filename = post['image_filename']
+        if form.image.data:
+            file = form.image.data
+            if allowed_file(file.filename):
                 if image_filename:
                     old_file_path = os.path.join(app.config['UPLOAD_FOLDER'], image_filename)
                     if os.path.exists(old_file_path):
                         os.remove(old_file_path)
                 
-                # Save new image
-                filename = str(uuid.uuid4()) + '.' + file.filename.rsplit('.', 1)[1].lower()
+                filename = secure_filename(str(uuid.uuid4()) + '.' + file.filename.rsplit('.', 1)[1].lower())
                 file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
                 image_filename = filename
         
-        if title and content:
-            db.execute('''
-                UPDATE posts 
-                SET title = ?, content = ?, excerpt = ?, image_filename = ?, post_type = ?, updated_at = CURRENT_TIMESTAMP
-                WHERE id = ?
-            ''', (title, content, excerpt, image_filename, post_type, post_id))
-            db.commit()
-            flash('Post updated successfully!', 'success')
-            return redirect(url_for('view_post', post_id=post_id))
-        else:
-            flash('Title and content are required.', 'error')
+        db.execute('''
+            UPDATE posts
+            SET title = ?, content = ?, excerpt = ?, image_filename = ?, post_type = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        ''', (title, content, excerpt, image_filename, post_type, post_id))
+        db.commit()
+        flash('Post updated successfully!', 'success')
+        return redirect(url_for('view_post', post_id=post_id))
     
-    return render_template('edit.html', post=post)
+    return render_template('edit.html', form=form, post=post)
 
 @app.route('/delete/<int:post_id>', methods=['POST'])
 def delete_post(post_id):
-    db = get_db()
-    post = db.execute('SELECT * FROM posts WHERE id = ?', (post_id,)).fetchone()
-    
-    if post:
-        # Delete associated image file
-        if post['image_filename']:
-            file_path = os.path.join(app.config['UPLOAD_FOLDER'], post['image_filename'])
-            if os.path.exists(file_path):
-                os.remove(file_path)
+    form = DeleteForm()
+    if form.validate_on_submit():
+        db = get_db()
+        post = db.execute('SELECT * FROM posts WHERE id = ?', (post_id,)).fetchone()
         
-        db.execute('DELETE FROM posts WHERE id = ?', (post_id,))
-        db.commit()
-        flash('Post deleted successfully!', 'success')
+        if post:
+            # Delete associated image file
+            if post['image_filename']:
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], post['image_filename'])
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+
+            db.execute('DELETE FROM posts WHERE id = ?', (post_id,))
+            db.commit()
+            flash('Post deleted successfully!', 'success')
+        else:
+            flash('Post not found.', 'error')
     else:
-        flash('Post not found.', 'error')
+        flash('Invalid request.', 'error')
     
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
     init_db()
-    app.run(debug=True)
+    app.run(debug=app.config['DEBUG'])
