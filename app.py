@@ -1,5 +1,7 @@
 import os
 import sqlite3
+import traceback
+import logging
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, flash, g
 from werkzeug.utils import secure_filename
@@ -199,4 +201,4 @@ def delete_post(post_id):
 
 if __name__ == '__main__':
     init_db()
-    app.run(debug=app.config['DEBUG'])
+    app.run(debug=True)

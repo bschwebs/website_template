@@ -36,8 +36,13 @@
             
             <div class="text-muted mb-4">
                 <small>
-                    <i class="fas fa-calendar me-1"></i>Published {{ post.created_at[:10] }}
-                    {% if post.updated_at != post.created_at %}
+                    <i class="fas fa-calendar me-1"></i>Published 
+                    {% if post.created_at %}
+                        {{ post.created_at[:10] }}
+                    {% else %}
+                        Unknown
+                    {% endif %}
+                    {% if post.updated_at and post.updated_at != post.created_at %}
                     <span class="ms-2">
                         <i class="fas fa-edit me-1"></i>Updated {{ post.updated_at[:10] }}
                     </span>
