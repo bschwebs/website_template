@@ -31,6 +31,7 @@
                                     <th>Image</th>
                                     <th>Title</th>
                                     <th>Type</th>
+                                    <th>Featured</th>
                                     <th>Excerpt</th>
                                     <th>Created</th>
                                     <th>Updated</th>
@@ -62,6 +63,15 @@
                                         </span>
                                     </td>
                                     <td>
+                                        {% if post.featured %}
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="fas fa-star me-1"></i>Featured
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
                                         {% if post.excerpt %}
                                             {{ post.excerpt[:50] }}{% if post.excerpt|length > 50 %}...{% endif %}
                                         {% else %}
@@ -86,6 +96,23 @@
                                                class="btn btn-sm btn-outline-primary" title="Edit">
                                                 <i class="fas fa-edit"></i>
                                             </a>
+                                            {% if post.featured %}
+                                            <form method="POST" action="{{ url_for('admin_unfeature_post', post_id=post.id) }}" 
+                                                  class="d-inline">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                                <button type="submit" class="btn btn-sm btn-warning" title="Unfeature">
+                                                    <i class="fas fa-star"></i>
+                                                </button>
+                                            </form>
+                                            {% else %}
+                                            <form method="POST" action="{{ url_for('admin_feature_post', post_id=post.id) }}" 
+                                                  class="d-inline">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                                <button type="submit" class="btn btn-sm btn-outline-warning" title="Feature">
+                                                    <i class="far fa-star"></i>
+                                                </button>
+                                            </form>
+                                            {% endif %}
                                             <form method="POST" action="{{ url_for('admin_delete_post', post_id=post.id) }}" 
                                                   class="d-inline" onsubmit="return confirm('Are you sure you want to delete this post?');">
                                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>

@@ -104,12 +104,30 @@ def is_admin_logged_in():
 @app.route('/')
 def index():
     db = get_db()
-    posts = db.execute('''
+    
+    # Get featured post
+    featured_post = db.execute('''
         SELECT * FROM posts 
-        ORDER BY created_at DESC 
-        LIMIT 10
-    ''').fetchall()
-    return render_template('index.html', posts=posts)
+        WHERE featured = 1 
+        LIMIT 1
+    ''').fetchone()
+    
+    # Get regular posts (excluding featured post if it exists)
+    if featured_post:
+        posts = db.execute('''
+            SELECT * FROM posts 
+            WHERE featured = 0
+            ORDER BY created_at DESC 
+            LIMIT 9
+        ''').fetchall()
+    else:
+        posts = db.execute('''
+            SELECT * FROM posts 
+            ORDER BY created_at DESC 
+            LIMIT 10
+        ''').fetchall()
+    
+    return render_template('index.html', posts=posts, featured_post=featured_post)
 
 @app.route('/stories')
 def stories():
@@ -319,6 +337,39 @@ def admin_delete_post(post_id):
             flash('Post deleted successfully!', 'success')
         else:
             flash('Post not found.', 'error')
+    
+    return redirect(url_for('admin_posts'))
+
+@app.route('/admin/posts/<int:post_id>/feature', methods=['POST'])
+@admin_required
+def admin_feature_post(post_id):
+    db = get_db()
+    post = db.execute('SELECT * FROM posts WHERE id = ?', (post_id,)).fetchone()
+    
+    if post:
+        # Unfeature all other posts first (only one featured post at a time)
+        db.execute('UPDATE posts SET featured = 0')
+        # Feature this post
+        db.execute('UPDATE posts SET featured = 1 WHERE id = ?', (post_id,))
+        db.commit()
+        flash('Post featured successfully!', 'success')
+    else:
+        flash('Post not found.', 'error')
+    
+    return redirect(url_for('admin_posts'))
+
+@app.route('/admin/posts/<int:post_id>/unfeature', methods=['POST'])
+@admin_required
+def admin_unfeature_post(post_id):
+    db = get_db()
+    post = db.execute('SELECT * FROM posts WHERE id = ?', (post_id,)).fetchone()
+    
+    if post:
+        db.execute('UPDATE posts SET featured = 0 WHERE id = ?', (post_id,))
+        db.commit()
+        flash('Post unfeatured successfully!', 'success')
+    else:
+        flash('Post not found.', 'error')
     
     return redirect(url_for('admin_posts'))
 
