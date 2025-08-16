@@ -14,9 +14,14 @@
 {% block content %}
 <div class="row">
     <div class="col-12">
-        <div class="jumbotron bg-light p-5 rounded mb-4">
-            <h1 class="display-4">Japan's History</h1>
-            <p class="lead">Discover amazing stories and insightful articles from our community of writers.</p>
+        <div class="jumbotron bg-light p-5 rounded mb-4 d-flex align-items-center">
+            <div class="me-4">
+                <img src="{{ url_for('static', filename='img/taiko_drum_tomoe.png') }}" alt="Taiko Drum" class="img-fluid" style="max-height: 150px; opacity: 0.8;">
+            </div>
+            <div class="flex-grow-1">
+                <h1 class="display-4">Japan's History</h1>
+                <p class="lead">Discover amazing stories and insightful articles from our community of writers.</p>
+            </div>
         </div>
     </div>
 </div>
@@ -25,7 +30,7 @@
 <!-- Featured Post -->
 <div class="row mb-5">
     <div class="col-12">
-        <div class="card border-warning shadow-lg overflow-hidden" style="height: 600px;">
+        <div class="card border-0 shadow-lg overflow-hidden" style="height: 600px;">
             {% if featured_post.image_filename %}
             <!-- Background Image -->
             <div class="position-absolute w-100 h-100" 
@@ -66,7 +71,7 @@
                     {% endif %}
                 </div>
                 <div>
-                    <a href="{{ url_for('posts.view_post_by_slug', slug=featured_post.slug) if featured_post.slug else url_for('posts.view_post', post_id=featured_post.id) }}" class="btn btn-warning btn-lg px-4 py-2">
+                    <a href="{{ url_for('posts.view_post_by_slug', slug=featured_post.slug) if featured_post.slug else url_for('posts.view_post', post_id=featured_post.id) }}" class="btn btn-primary btn-lg px-4 py-2">
                         <i class="fas fa-arrow-right me-2"></i>Read Featured Post
                     </a>
                 </div>
