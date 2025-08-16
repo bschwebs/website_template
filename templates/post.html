@@ -10,6 +10,7 @@
                 <span class="badge bg-{{ 'primary' if post.post_type == 'story' else 'secondary' }} fs-6">
                     {{ post.post_type.title() }}
                 </span>
+                {% if is_admin_logged_in %}
                 <div class="dropdown">
                     <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" 
                             data-bs-toggle="dropdown">
@@ -30,6 +31,7 @@
                         </li>
                     </ul>
                 </div>
+                {% endif %}
             </div>
             
             <h1 class="mb-3">{{ post.title }}</h1>

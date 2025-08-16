@@ -142,6 +142,7 @@ def view_post(post_id):
     return render_template('post.html', post=post, form=form)
 
 @app.route('/create', methods=['GET', 'POST'])
+@admin_required
 def create_post():
     form = PostForm()
     if form.validate_on_submit():
@@ -172,6 +173,7 @@ def create_post():
     return render_template('create.html', form=form)
 
 @app.route('/edit/<int:post_id>', methods=['GET', 'POST'])
+@admin_required
 def edit_post(post_id):
     db = get_db()
     post = db.execute('SELECT * FROM posts WHERE id = ?', (post_id,)).fetchone()
@@ -220,6 +222,7 @@ def edit_post(post_id):
     return render_template('edit.html', form=form, post=post)
 
 @app.route('/delete/<int:post_id>', methods=['POST'])
+@admin_required
 def delete_post(post_id):
     form = DeleteForm()
     if form.validate_on_submit():

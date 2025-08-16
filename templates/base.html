@@ -74,11 +74,13 @@
                         </a>
                     </li>
                     {% endif %}
+                    {% if is_admin_logged_in %}
                     <li class="nav-item">
                         <a class="nav-link btn btn-primary text-white ms-2" href="{{ url_for('create_post') }}">
                             <i class="fas fa-plus me-1"></i>Create Post
                         </a>
                     </li>
+                    {% endif %}
                 </ul>
             </div>
         </div>

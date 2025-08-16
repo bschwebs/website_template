@@ -6,10 +6,12 @@
         <div class="jumbotron bg-light p-5 rounded mb-4">
             <h1 class="display-4">Welcome to Story Hub</h1>
             <p class="lead">Discover amazing stories and insightful articles from our community of writers.</p>
+            {% if is_admin_logged_in %}
             <hr class="my-4">
             <a class="btn btn-primary btn-lg" href="{{ url_for('create_post') }}" role="button">
                 <i class="fas fa-pen me-2"></i>Start Writing
             </a>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -48,8 +50,12 @@
 {% else %}
 <div class="text-center py-5">
     <h3>No posts yet</h3>
+    {% if is_admin_logged_in %}
     <p class="text-muted">Be the first to share your story or article!</p>
     <a href="{{ url_for('create_post') }}" class="btn btn-primary">Create First Post</a>
+    {% else %}
+    <p class="text-muted">Check back soon for new content!</p>
+    {% endif %}
 </div>
 {% endif %}
 {% endblock %}
