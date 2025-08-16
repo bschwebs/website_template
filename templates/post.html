@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ post.title }} - Story Hub{% endblock %}
+{% block title %}{{ post.title }} | Japan's History{% endblock %}
 
 {% block meta_description %}{{ post.excerpt if post.excerpt else (post.content|striptags)[:160] }}{% endblock %}
 
@@ -30,11 +30,11 @@
     "image": "{% if post.image_filename %}{{ url_for('static', filename='uploads/' + post.image_filename, _external=True) }}{% else %}{{ url_for('static', filename='uploads/sample1.jpg', _external=True) }}{% endif %}",
     "author": {
         "@type": "Organization",
-        "name": "Story Hub"
+        "name": "Japan's History"
     },
     "publisher": {
         "@type": "Organization",
-        "name": "Story Hub",
+        "name": "Japan's History",
         "logo": {
             "@type": "ImageObject",
             "url": "{{ url_for('static', filename='uploads/sample1.jpg', _external=True) }}"

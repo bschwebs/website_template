@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Story Hub - Discover Amazing Stories and Articles{% endblock %}
+{% block title %}Japan's History{% endblock %}
 
 {% block meta_description %}Discover amazing stories and insightful articles from our community of writers.{% endblock %}
 
@@ -15,7 +15,7 @@
 <div class="row">
     <div class="col-12">
         <div class="jumbotron bg-light p-5 rounded mb-4">
-            <h1 class="display-4">Welcome to Story Hub</h1>
+            <h1 class="display-4">Japan's History</h1>
             <p class="lead">Discover amazing stories and insightful articles from our community of writers.</p>
         </div>
     </div>
@@ -112,7 +112,7 @@
 <div class="row g-0">
     {% for post in posts %}
     <div class="col-md-6 col-lg-4">
-        <div class="card post-card h-100 rounded-0 border-0 overflow-hidden position-relative" style="height: 400px;">
+        <div class="card post-card rounded-0 border-0 overflow-hidden position-relative" style="height: 400px !important; min-height: 400px !important; max-height: 400px !important;">
             {% if post.image_filename %}
             <!-- Background Image -->
             <div class="position-absolute w-100 h-100" 

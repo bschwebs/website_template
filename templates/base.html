@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
     <!-- Basic SEO Meta Tags -->
-    <title>{% block title %}Story Hub - Discover Amazing Stories and Articles{% endblock %}</title>
+    <title>{% block title %}Japan's History{% endblock %}</title>
     <meta name="description" content="{% block meta_description %}Discover amazing stories and insightful articles from our community of writers. Explore technology, lifestyle, travel, and creative content.{% endblock %}">
     <meta name="keywords" content="{% block meta_keywords %}blog, stories, articles, writing, technology, lifestyle, travel, creativity{% endblock %}">
     <meta name="author" content="Story Hub">
@@ -15,7 +15,7 @@
     <link rel="canonical" href="{% block canonical_url %}{{ request.url }}{% endblock %}">
     
     <!-- Open Graph Meta Tags -->
-    <meta property="og:title" content="{% block og_title %}Story Hub - Discover Amazing Stories and Articles{% endblock %}">
+    <meta property="og:title" content="{% block og_title %}Japan's History{% endblock %}">
     <meta property="og:description" content="{% block og_description %}Discover amazing stories and insightful articles from our community of writers. Explore technology, lifestyle, travel, and creative content.{% endblock %}">
     <meta property="og:type" content="{% block og_type %}website{% endblock %}">
     <meta property="og:url" content="{% block og_url %}{{ request.url }}{% endblock %}">
@@ -26,7 +26,7 @@
     
     <!-- Twitter Card Meta Tags -->
     <meta name="twitter:card" content="{% block twitter_card %}summary_large_image{% endblock %}">
-    <meta name="twitter:title" content="{% block twitter_title %}Story Hub - Discover Amazing Stories and Articles{% endblock %}">
+    <meta name="twitter:title" content="{% block twitter_title %}Japan's History{% endblock %}">
     <meta name="twitter:description" content="{% block twitter_description %}Discover amazing stories and insightful articles from our community of writers. Explore technology, lifestyle, travel, and creative content.{% endblock %}">
     <meta name="twitter:image" content="{% block twitter_image %}{{ url_for('static', filename='uploads/sample1.jpg') }}{% endblock %}">
     <meta name="twitter:image:alt" content="{% block twitter_image_alt %}Story Hub - Blog Platform{% endblock %}">
@@ -44,7 +44,7 @@
     {
         "@context": "https://schema.org",
         "@type": "WebSite",
-        "name": "Story Hub",
+        "name": "Japan's History",
         "description": "Discover amazing stories and insightful articles from our community of writers.",
         "url": "{{ request.url_root }}",
         "potentialAction": {
@@ -91,7 +91,7 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
             <a class="navbar-brand" href="{{ url_for('main.index') }}">
-                <i class="fas fa-book-open me-2"></i>Story Hub
+                <i class="fas fa-book-open me-2"></i>Japan's History
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -179,7 +179,7 @@
 
     <footer class="bg-dark text-light py-4 mt-5">
         <div class="container text-center">
-            <p>&copy; 2025 Story Hub. Built with Flask, SQLite, and Bootstrap.</p>
+            <p>&copy; 2025 Japan's History. - Brandon Schwebs</p>
         </div>
     </footer>
 
