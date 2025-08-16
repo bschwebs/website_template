@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git pull:*)",
+      "Bash(pip install:*)",
+      "Bash(flask run:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

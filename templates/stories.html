@@ -26,12 +26,12 @@
                 </div>
                 <h5 class="card-title">{{ story.title }}</h5>
                 {% if story.excerpt %}
-                <p class="card-text">{{ story.excerpt[:100] }}{% if story.excerpt|length > 100 %}...{% endif %}</p>
+                <p class="card-text">{{ (story.excerpt[:100] + ('...' if story.excerpt|length > 100 else ''))|safe }}</p>
                 {% else %}
-                <p class="card-text">{{ story.content[:100] }}{% if story.content|length > 100 %}...{% endif %}</p>
+                <p class="card-text">{{ (story.content[:100] + ('...' if story.content|length > 100 else ''))|safe }}</p>
                 {% endif %}
                 <div class="mt-auto">
-                    <a href="{{ url_for('view_post', post_id=story.id) }}" class="btn btn-outline-primary">Read Story</a>
+                    <a href="{{ url_for('view_post_by_slug', slug=story.slug) if story.slug else url_for('view_post', post_id=story.id) }}" class="btn btn-outline-primary">Read Story</a>
                 </div>
             </div>
         </div>

@@ -12,6 +12,7 @@ from wtforms import StringField, TextAreaField, SelectField, SubmitField, FileFi
 from wtforms.validators import DataRequired, Length
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
+from slugify import slugify
 from config import Config
 
 app = Flask(__name__)
@@ -101,6 +102,29 @@ def admin_required(f):
 def is_admin_logged_in():
     return session.get('admin_logged_in', False)
 
+def generate_unique_slug(title, post_id=None):
+    """Generate a unique slug for a post title"""
+    base_slug = slugify(title)
+    if not base_slug:
+        base_slug = 'untitled'
+    
+    db = get_db()
+    slug = base_slug
+    counter = 1
+    
+    while True:
+        # Check if slug exists (excluding current post if editing)
+        if post_id:
+            existing = db.execute('SELECT id FROM posts WHERE slug = ? AND id != ?', (slug, post_id)).fetchone()
+        else:
+            existing = db.execute('SELECT id FROM posts WHERE slug = ?', (slug,)).fetchone()
+        
+        if not existing:
+            return slug
+        
+        slug = f"{base_slug}-{counter}"
+        counter += 1
+
 @app.route('/')
 def index():
     db = get_db()
@@ -149,6 +173,16 @@ def articles():
     ''').fetchall()
     return render_template('articles.html', articles=articles)
 
+@app.route('/post/<slug>')
+def view_post_by_slug(slug):
+    db = get_db()
+    post = db.execute('SELECT * FROM posts WHERE slug = ?', (slug,)).fetchone()
+    if post is None:
+        flash('Post not found.', 'error')
+        return redirect(url_for('index'))
+    form = DeleteForm()
+    return render_template('post.html', post=post, form=form)
+
 @app.route('/post/<int:post_id>')
 def view_post(post_id):
     db = get_db()
@@ -156,6 +190,11 @@ def view_post(post_id):
     if post is None:
         flash('Post not found.', 'error')
         return redirect(url_for('index'))
+    
+    # Redirect to slug-based URL if slug exists
+    if post['slug']:
+        return redirect(url_for('view_post_by_slug', slug=post['slug']), code=301)
+    
     form = DeleteForm()
     return render_template('post.html', post=post, form=form)
 
@@ -179,11 +218,14 @@ def create_post():
                 file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
                 image_filename = filename
         
+        # Generate unique slug
+        slug = generate_unique_slug(title)
+        
         db = get_db()
         db.execute('''
-            INSERT INTO posts (title, content, excerpt, image_filename, post_type)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (title, content, excerpt, image_filename, post_type))
+            INSERT INTO posts (title, content, excerpt, image_filename, post_type, slug)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (title, content, excerpt, image_filename, post_type, slug))
         db.commit()
         flash('Post created successfully!', 'success')
         return redirect(url_for('index'))
@@ -228,14 +270,20 @@ def edit_post(post_id):
                 file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
                 image_filename = filename
         
+        # Generate new slug if title changed
+        if title != post['title']:
+            slug = generate_unique_slug(title, post_id)
+        else:
+            slug = post['slug'] if post['slug'] else generate_unique_slug(title, post_id)
+        
         db.execute('''
             UPDATE posts
-            SET title = ?, content = ?, excerpt = ?, image_filename = ?, post_type = ?, updated_at = CURRENT_TIMESTAMP
+            SET title = ?, content = ?, excerpt = ?, image_filename = ?, post_type = ?, slug = ?, updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
-        ''', (title, content, excerpt, image_filename, post_type, post_id))
+        ''', (title, content, excerpt, image_filename, post_type, slug, post_id))
         db.commit()
         flash('Post updated successfully!', 'success')
-        return redirect(url_for('view_post', post_id=post_id))
+        return redirect(url_for('view_post_by_slug', slug=slug))
     
     return render_template('edit.html', form=form, post=post)
 

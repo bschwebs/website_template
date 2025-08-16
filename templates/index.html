@@ -49,13 +49,13 @@
                     </div>
                     <h1 class="card-title display-5 fw-bold text-white mb-3">{{ featured_post.title }}</h1>
                     {% if featured_post.excerpt %}
-                    <p class="card-text lead text-white mb-4 opacity-90">{{ featured_post.excerpt }}</p>
+                    <p class="card-text lead text-white mb-4 opacity-90">{{ featured_post.excerpt|safe }}</p>
                     {% else %}
-                    <p class="card-text text-white mb-4 opacity-90">{{ featured_post.content[:200] }}{% if featured_post.content|length > 200 %}...{% endif %}</p>
+                    <p class="card-text text-white mb-4 opacity-90">{{ (featured_post.content[:200] + ('...' if featured_post.content|length > 200 else ''))|safe }}</p>
                     {% endif %}
                 </div>
                 <div>
-                    <a href="{{ url_for('view_post', post_id=featured_post.id) }}" class="btn btn-warning btn-lg px-4 py-2">
+                    <a href="{{ url_for('view_post_by_slug', slug=featured_post.slug) if featured_post.slug else url_for('view_post', post_id=featured_post.id) }}" class="btn btn-warning btn-lg px-4 py-2">
                         <i class="fas fa-arrow-right me-2"></i>Read Featured Post
                     </a>
                 </div>
@@ -84,12 +84,12 @@
                 </div>
                 <h5 class="card-title">{{ post.title }}</h5>
                 {% if post.excerpt %}
-                <p class="card-text">{{ post.excerpt[:100] }}{% if post.excerpt|length > 100 %}...{% endif %}</p>
+                <p class="card-text">{{ (post.excerpt[:100] + ('...' if post.excerpt|length > 100 else ''))|safe }}</p>
                 {% else %}
-                <p class="card-text">{{ post.content[:100] }}{% if post.content|length > 100 %}...{% endif %}</p>
+                <p class="card-text">{{ (post.content[:100] + ('...' if post.content|length > 100 else ''))|safe }}</p>
                 {% endif %}
                 <div class="mt-auto">
-                    <a href="{{ url_for('view_post', post_id=post.id) }}" class="btn btn-outline-primary">Read More</a>
+                    <a href="{{ url_for('view_post_by_slug', slug=post.slug) if post.slug else url_for('view_post', post_id=post.id) }}" class="btn btn-outline-primary">Read More</a>
                 </div>
             </div>
         </div>
