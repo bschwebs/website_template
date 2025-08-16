@@ -6,22 +6,21 @@ This script creates the SQLite database and optionally populates it with sample 
 
 import sqlite3
 import os
+import argparse
 from datetime import datetime
 
-DATABASE = 'content.db'
+DATABASE = os.environ.get('DATABASE_URL', 'content.db')
 
-def create_database():
+def create_database(recreate=False):
     """Create the SQLite database and tables."""
     print("Creating database and tables...")
     
-    # Remove existing database if it exists
-    if os.path.exists(DATABASE):
-        response = input(f"Database '{DATABASE}' already exists. Do you want to recreate it? (y/N): ")
-        if response.lower() != 'y':
-            print("Database initialization cancelled.")
-            return False
+    if recreate and os.path.exists(DATABASE):
         os.remove(DATABASE)
         print(f"Removed existing database: {DATABASE}")
+    elif os.path.exists(DATABASE):
+        print(f"Database '{DATABASE}' already exists. Use --recreate to overwrite it.")
+        return False
     
     # Create new database connection
     conn = sqlite3.connect(DATABASE)
@@ -193,7 +192,7 @@ Be aware of character archetypes and stereotypes, but don't avoid them entirely.
 
 Character development is a long-term investment. The characters you create today will grow and evolve not just within their current story, but potentially across multiple works. Some of literature's most beloved characters feel like real people because their creators spent years understanding and developing them.
 
-Remember, readers can sense when a character is fully realized versus when they're just a collection of traits. Invest the time in truly knowing your characters, and your readers will thank you by caring about their journey as much as you do.''',
+Remember, a reader can sense when a character is fully realized versus when they're just a collection of traits. Invest the time in truly knowing your characters, and your readers will thank you by caring about their journey as much as you do.''',
             'excerpt': 'A deep dive into creating characters that readers will remember long after finishing your story.',
             'post_type': 'article'
         },
@@ -267,7 +266,7 @@ The key is subtlety – let the setting support your themes without hitting read
 1. **Create a setting bible**: Keep track of important details about your world to maintain consistency
 2. **Use maps and floor plans**: Visual aids help you keep spatial relationships clear
 3. **Visit or study similar real places**: Even fantasy settings benefit from real-world inspiration
-4. **Interview locals**: If writing about a real place you haven't visited, talk to people who have lived there
+4. **Interview locals**: If writing about a real place you've not visited, talk to people who have lived there
 5. **Consider seasonal changes**: How does your setting change throughout the year?
 
 **Common Setting Mistakes to Avoid**
@@ -280,7 +279,7 @@ The key is subtlety – let the setting support your themes without hitting read
 
 **The Emotional Landscape**
 
-Remember that setting isn't just about physical space – it's about emotional space too. How does your setting make your characters feel? How does it make your readers feel? The emotional resonance of your setting can be just as important as its physical details.
+Remember that setting is not just about physical space – it's about emotional space too. How does your setting make your characters feel? How does it make your readers feel? The emotional resonance of your setting can be just as important as its physical details.
 
 A well-crafted setting becomes inseparable from the story itself. Readers should feel like they've visited your world, breathed its air, and understood its rhythms. When setting is done well, readers will miss it when the story ends – and that's the mark of a truly successful fictional world.''',
             'excerpt': 'How to create immersive story worlds that enhance plot, character, and theme.',
@@ -300,7 +299,7 @@ A well-crafted setting becomes inseparable from the story itself. Readers should
     
     print(f"✅ Added {len(sample_posts)} sample posts to the database!")
 
-def display_database_info():
+def display_database__info():
     """Display information about the created database."""
     print(f"\n📊 Database Information:")
     print(f"Database file: {DATABASE}")
@@ -337,27 +336,28 @@ def create_directories():
 
 def main():
     """Main function to initialize the database."""
+    parser = argparse.ArgumentParser(description='Initialize the database for the Flask Story Publishing Website.')
+    parser.add_argument('--recreate', action='store_true', help='Recreate the database if it already exists.')
+    parser.add_argument('--populate', action='store_true', help='Populate the database with sample data.')
+    args = parser.parse_args()
+
     print("🚀 Flask Story Website Database Initialization")
     print("=" * 50)
     
-    # Create directories
     create_directories()
     
-    # Create database
-    if create_database():
-        # Ask if user wants sample data
-        response = input("\nDo you want to add sample stories and articles? (Y/n): ")
-        if response.lower() != 'n':
+    if create_database(args.recreate):
+        if args.populate:
             populate_sample_data()
         
         display_database_info()
         
         print("\n🎉 Database initialization complete!")
         print("\nNext steps:")
-        print("1. Make sure you have Flask installed: pip install Flask")
-        print("2. Copy your HTML templates to the templates/ directory")
-        print("3. Run your Flask app: python app.py")
-        print("4. Visit http://localhost:5000 to see your website")
+        print("1. Make sure you have Flask installed: pip install -r requirements.txt")
+        print("2. Set up your .env file with your SECRET_KEY")
+        print("3. Run your Flask app: flask run")
+        print("4. Visit http://127.0.0.1:5000 to see your website")
     
     print("\n" + "=" * 50)
 
