@@ -2,11 +2,25 @@
 *.pyc
 __pycache__/
 venv/
+.venv/
 .env
 
 # IDE
 .idea/
 .vscode/
+
+# Testing and Development
+.pytest_cache/
+test_*.py
+*_test.py
+add_*.py
+insert_*.py
+update_*.py
+*_old.*
+
+# Database backups
+*.db.backup
+blog.db
 
 # Other
 .DS_Store
