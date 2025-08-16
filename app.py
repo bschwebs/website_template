@@ -3,13 +3,15 @@ import sqlite3
 import traceback
 import logging
 from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for, flash, g
+from flask import Flask, render_template, request, redirect, url_for, flash, g, session
 from werkzeug.utils import secure_filename
 import uuid
 from flask_wtf.csrf import CSRFProtect
 from flask_wtf import FlaskForm
-from wtforms import StringField, TextAreaField, SelectField, SubmitField, FileField
+from wtforms import StringField, TextAreaField, SelectField, SubmitField, FileField, PasswordField
 from wtforms.validators import DataRequired, Length
+from werkzeug.security import generate_password_hash, check_password_hash
+from functools import wraps
 from config import Config
 
 app = Flask(__name__)
@@ -29,6 +31,14 @@ class PostForm(FlaskForm):
 
 class DeleteForm(FlaskForm):
     submit = SubmitField('Delete')
+
+class LoginForm(FlaskForm):
+    username = StringField('Username', validators=[DataRequired()])
+    password = PasswordField('Password', validators=[DataRequired()])
+    submit = SubmitField('Login')
+
+class AdminPostForm(PostForm):
+    pass
 
 def get_db():
     db = getattr(g, '_database', None)
@@ -57,12 +67,39 @@ def init_db():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
+            
+            CREATE TABLE IF NOT EXISTS admin_users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
         ''')
+        
+        # Create default admin user if none exists
+        admin_exists = db.execute('SELECT COUNT(*) FROM admin_users').fetchone()[0]
+        if admin_exists == 0:
+            admin_password_hash = generate_password_hash('admin123')
+            db.execute('INSERT INTO admin_users (username, password_hash) VALUES (?, ?)', 
+                      ('admin', admin_password_hash))
+        
         db.commit()
 
 def allowed_file(filename):
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('admin_logged_in'):
+            flash('Admin access required.', 'error')
+            return redirect(url_for('admin_login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+def is_admin_logged_in():
+    return session.get('admin_logged_in', False)
 
 @app.route('/')
 def index():
@@ -143,7 +180,14 @@ def edit_post(post_id):
         flash('Post not found.', 'error')
         return redirect(url_for('index'))
     
-    form = PostForm(obj=post)
+    form = PostForm()
+    
+    # Pre-populate form with existing data on GET request
+    if request.method == 'GET':
+        form.title.data = post['title']
+        form.content.data = post['content']
+        form.excerpt.data = post['excerpt']
+        form.post_type.data = post['post_type']
 
     if form.validate_on_submit():
         title = form.title.data
@@ -198,6 +242,87 @@ def delete_post(post_id):
         flash('Invalid request.', 'error')
     
     return redirect(url_for('index'))
+
+# Admin Routes
+@app.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        db = get_db()
+        admin = db.execute('SELECT * FROM admin_users WHERE username = ?', 
+                          (form.username.data,)).fetchone()
+        
+        if admin and check_password_hash(admin['password_hash'], form.password.data):
+            session['admin_logged_in'] = True
+            session['admin_username'] = admin['username']
+            flash('Successfully logged in as admin.', 'success')
+            return redirect(url_for('admin_dashboard'))
+        else:
+            flash('Invalid username or password.', 'error')
+    
+    return render_template('admin/login.html', form=form)
+
+@app.route('/admin/logout')
+def admin_logout():
+    session.pop('admin_logged_in', None)
+    session.pop('admin_username', None)
+    flash('You have been logged out.', 'info')
+    return redirect(url_for('index'))
+
+@app.route('/admin')
+@admin_required
+def admin_dashboard():
+    db = get_db()
+    posts = db.execute('''
+        SELECT * FROM posts 
+        ORDER BY created_at DESC
+    ''').fetchall()
+    
+    stats = {
+        'total_posts': len(posts),
+        'total_stories': len([p for p in posts if p['post_type'] == 'story']),
+        'total_articles': len([p for p in posts if p['post_type'] == 'article'])
+    }
+    
+    return render_template('admin/dashboard.html', posts=posts, stats=stats)
+
+@app.route('/admin/posts')
+@admin_required
+def admin_posts():
+    db = get_db()
+    posts = db.execute('''
+        SELECT * FROM posts 
+        ORDER BY created_at DESC
+    ''').fetchall()
+    return render_template('admin/posts.html', posts=posts)
+
+@app.route('/admin/posts/<int:post_id>/delete', methods=['POST'])
+@admin_required
+def admin_delete_post(post_id):
+    form = DeleteForm()
+    if form.validate_on_submit():
+        db = get_db()
+        post = db.execute('SELECT * FROM posts WHERE id = ?', (post_id,)).fetchone()
+        
+        if post:
+            # Delete associated image file
+            if post['image_filename']:
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], post['image_filename'])
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+
+            db.execute('DELETE FROM posts WHERE id = ?', (post_id,))
+            db.commit()
+            flash('Post deleted successfully!', 'success')
+        else:
+            flash('Post not found.', 'error')
+    
+    return redirect(url_for('admin_posts'))
+
+# Add admin context to all templates
+@app.context_processor
+def inject_admin_status():
+    return {'is_admin_logged_in': is_admin_logged_in()}
 
 if __name__ == '__main__':
     init_db()
