@@ -27,6 +27,14 @@
             </div>
             
             <div class="mb-3">
+                {{ form.tags.label(class="form-label") }}
+                {{ form.tags(class="form-control") }}
+                <div class="form-text">
+                    <i class="fas fa-tags me-1"></i>Add tags to help categorize your post (separate with commas)
+                </div>
+            </div>
+            
+            <div class="mb-3">
                 {{ form.image.label(class="form-label") }}
                 {{ form.image(class="form-control", accept="image/png,image/jpg,image/jpeg,image/gif,image/webp") }}
                 <div class="form-text">Supported formats: PNG, JPG, JPEG, GIF, WebP. Max size: 16MB.</div>
@@ -42,7 +50,7 @@
             
             <div class="d-flex gap-2">
                 {{ form.submit(class="btn btn-primary") }}
-                <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">Cancel</a>
+                <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">Cancel</a>
             </div>
         </form>
     </div>

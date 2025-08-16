@@ -33,7 +33,7 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand" href="{{ url_for('index') }}">
+            <a class="navbar-brand" href="{{ url_for('main.index') }}">
                 <i class="fas fa-book-open me-2"></i>Story Hub
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -42,15 +42,32 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('index') }}">Home</a>
+                        <a class="nav-link" href="{{ url_for('main.index') }}">Home</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('stories') }}">Stories</a>
+                        <a class="nav-link" href="{{ url_for('main.stories') }}">Stories</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('articles') }}">Articles</a>
+                        <a class="nav-link" href="{{ url_for('main.articles') }}">Articles</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('search.all_tags') }}">
+                            <i class="fas fa-tags me-1"></i>Tags
+                        </a>
                     </li>
                 </ul>
+                
+                <!-- Search Form -->
+                <form class="d-flex me-3" method="GET" action="{{ url_for('search.search_posts') }}">
+                    <div class="input-group">
+                        <input type="text" name="query" class="form-control" placeholder="Search..." 
+                               value="{{ request.args.get('query', '') }}" style="width: 200px;">
+                        <button type="submit" class="btn btn-outline-light">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </form>
+                
                 <ul class="navbar-nav">
                     {% if is_admin_logged_in %}
                     <li class="nav-item dropdown">
@@ -58,25 +75,25 @@
                             <i class="fas fa-cog me-1"></i>Admin
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ url_for('admin_dashboard') }}">
+                            <li><a class="dropdown-item" href="{{ url_for('admin.admin_dashboard') }}">
                                 <i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('admin_posts') }}">
+                            <li><a class="dropdown-item" href="{{ url_for('admin.admin_posts') }}">
                                 <i class="fas fa-list me-2"></i>Manage Posts</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ url_for('admin_logout') }}">
+                            <li><a class="dropdown-item" href="{{ url_for('auth.admin_logout') }}">
                                 <i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
                         </ul>
                     </li>
                     {% else %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('admin_login') }}">
+                        <a class="nav-link" href="{{ url_for('auth.admin_login') }}">
                             <i class="fas fa-lock me-1"></i>Admin
                         </a>
                     </li>
                     {% endif %}
                     {% if is_admin_logged_in %}
                     <li class="nav-item">
-                        <a class="nav-link btn btn-primary text-white ms-2" href="{{ url_for('create_post') }}">
+                        <a class="nav-link btn btn-primary text-white ms-2" href="{{ url_for('posts.create_post') }}">
                             <i class="fas fa-plus me-1"></i>Create Post
                         </a>
                     </li>

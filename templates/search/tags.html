@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}All Tags - Story Hub{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-tags me-2"></i>All Tags</h1>
+            <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-home me-1"></i>Back to Home
+            </a>
+        </div>
+        
+        {% if tags %}
+            <div class="row">
+                {% for tag in tags %}
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5 class="card-title mb-1">
+                                    <a href="{{ url_for('search.posts_by_tag', slug=tag.slug) }}" 
+                                       class="text-decoration-none">
+                                        <i class="fas fa-tag me-2"></i>{{ tag.name }}
+                                    </a>
+                                </h5>
+                                <p class="card-text text-muted mb-0">
+                                    {{ tag.post_count }} post{{ 's' if tag.post_count != 1 else '' }}
+                                </p>
+                            </div>
+                            <a href="{{ url_for('search.posts_by_tag', slug=tag.slug) }}" 
+                               class="btn btn-outline-primary btn-sm">
+                                View Posts
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-tags fa-3x text-muted mb-3"></i>
+                <h4>No tags found</h4>
+                <p class="text-muted">No tags have been created yet. Tags will appear here when posts are tagged.</p>
+                {% if is_admin_logged_in %}
+                <a href="{{ url_for('posts.create_post') }}" class="btn btn-primary">Create First Post</a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -14,7 +14,7 @@
 <!-- Featured Post -->
 <div class="row mb-5">
     <div class="col-12">
-        <div class="card border-warning shadow-lg overflow-hidden" style="height: 400px;">
+        <div class="card border-warning shadow-lg overflow-hidden" style="height: 600px;">
             {% if featured_post.image_filename %}
             <!-- Background Image -->
             <div class="position-absolute w-100 h-100" 
@@ -55,7 +55,7 @@
                     {% endif %}
                 </div>
                 <div>
-                    <a href="{{ url_for('view_post_by_slug', slug=featured_post.slug) if featured_post.slug else url_for('view_post', post_id=featured_post.id) }}" class="btn btn-warning btn-lg px-4 py-2">
+                    <a href="{{ url_for('posts.view_post_by_slug', slug=featured_post.slug) if featured_post.slug else url_for('posts.view_post', post_id=featured_post.id) }}" class="btn btn-warning btn-lg px-4 py-2">
                         <i class="fas fa-arrow-right me-2"></i>Read Featured Post
                     </a>
                 </div>
@@ -66,7 +66,38 @@
 {% endif %}
 
 {% if posts %}
-<h2 class="mb-4">{% if featured_post %}More Posts{% else %}Latest Posts{% endif %}</h2>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">{% if featured_post %}More Posts{% else %}Latest Posts{% endif %}</h2>
+    
+    <!-- Pagination Controls -->
+    {% if total_pages > 1 %}
+    <div class="d-flex align-items-center">
+        <span class="text-muted me-3">Page {{ page }} of {{ total_pages }}</span>
+        <div class="btn-group" role="group">
+            {% if has_prev %}
+            <a href="{{ url_for('main.index', page=prev_page) }}" class="btn btn-outline-primary">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            {% else %}
+            <button class="btn btn-outline-secondary" disabled>
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            {% endif %}
+            
+            {% if has_next %}
+            <a href="{{ url_for('main.index', page=next_page) }}" class="btn btn-outline-primary">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+            {% else %}
+            <button class="btn btn-outline-secondary" disabled>
+                <i class="fas fa-chevron-right"></i>
+            </button>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
 <div class="row">
     {% for post in posts %}
     <div class="col-md-6 col-lg-4 mb-4">
@@ -89,19 +120,40 @@
                 <p class="card-text">{{ (post.content[:100] + ('...' if post.content|length > 100 else ''))|safe }}</p>
                 {% endif %}
                 <div class="mt-auto">
-                    <a href="{{ url_for('view_post_by_slug', slug=post.slug) if post.slug else url_for('view_post', post_id=post.id) }}" class="btn btn-outline-primary">Read More</a>
+                    <a href="{{ url_for('posts.view_post_by_slug', slug=post.slug) if post.slug else url_for('posts.view_post', post_id=post.id) }}" class="btn btn-outline-primary">Read More</a>
                 </div>
             </div>
         </div>
     </div>
     {% endfor %}
 </div>
+
+<!-- Bottom Pagination for Better UX -->
+{% if total_pages > 1 %}
+<div class="d-flex justify-content-center mt-4">
+    <div class="d-flex align-items-center">
+        {% if has_prev %}
+        <a href="{{ url_for('main.index', page=prev_page) }}" class="btn btn-primary me-2">
+            <i class="fas fa-chevron-left me-1"></i>Previous
+        </a>
+        {% endif %}
+        
+        <span class="mx-3 text-muted">Page {{ page }} of {{ total_pages }}</span>
+        
+        {% if has_next %}
+        <a href="{{ url_for('main.index', page=next_page) }}" class="btn btn-primary ms-2">
+            Next<i class="fas fa-chevron-right ms-1"></i>
+        </a>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
 {% else %}
 <div class="text-center py-5">
     <h3>No posts yet</h3>
     {% if is_admin_logged_in %}
     <p class="text-muted">Be the first to share your story or article!</p>
-    <a href="{{ url_for('create_post') }}" class="btn btn-primary">Create First Post</a>
+    <a href="{{ url_for('posts.create_post') }}" class="btn btn-primary">Create First Post</a>
     {% else %}
     <p class="text-muted">Check back soon for new content!</p>
     {% endif %}

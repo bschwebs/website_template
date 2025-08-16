@@ -27,6 +27,14 @@
             </div>
             
             <div class="mb-3">
+                {{ form.tags.label(class="form-label") }}
+                {{ form.tags(class="form-control") }}
+                <div class="form-text">
+                    <i class="fas fa-tags me-1"></i>Add tags to help categorize your post (separate with commas)
+                </div>
+            </div>
+            
+            <div class="mb-3">
                 {{ form.image.label(class="form-label") }}
                 {% if post.image_filename %}
                 <div class="mb-2">
@@ -51,7 +59,7 @@
             
             <div class="d-flex gap-2">
                 {{ form.submit(class="btn btn-primary") }}
-                <a href="{{ url_for('view_post', post_id=post.id) }}" class="btn btn-outline-secondary">Cancel</a>
+                <a href="{{ url_for('posts.view_post', post_id=post.id) }}" class="btn btn-outline-secondary">Cancel</a>
             </div>
         </form>
     </div>
