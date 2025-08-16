@@ -2,6 +2,60 @@
 
 {% block title %}{{ post.title }} - Story Hub{% endblock %}
 
+{% block meta_description %}{{ post.excerpt if post.excerpt else (post.content|striptags)[:160] }}{% endblock %}
+
+{% block meta_keywords %}{% if tags %}{{ tags|map(attribute='name')|join(', ') }}, {% endif %}{{ post.post_type }}, story hub, blog{% endblock %}
+
+{% block canonical_url %}{{ url_for('posts.view_post_by_slug', slug=post.slug, _external=True) if post.slug else url_for('posts.view_post', post_id=post.id, _external=True) }}{% endblock %}
+
+<!-- Open Graph for Posts -->
+{% block og_title %}{{ post.title }}{% endblock %}
+{% block og_description %}{{ post.excerpt if post.excerpt else (post.content|striptags)[:200] }}{% endblock %}
+{% block og_type %}article{% endblock %}
+{% block og_url %}{{ url_for('posts.view_post_by_slug', slug=post.slug, _external=True) if post.slug else url_for('posts.view_post', post_id=post.id, _external=True) }}{% endblock %}
+{% block og_image %}{% if post.image_filename %}{{ url_for('static', filename='uploads/' + post.image_filename, _external=True) }}{% else %}{{ url_for('static', filename='uploads/sample1.jpg', _external=True) }}{% endif %}{% endblock %}
+{% block og_image_alt %}{{ post.title }}{% endblock %}
+
+<!-- Twitter Cards for Posts -->
+{% block twitter_card %}{% if post.image_filename %}summary_large_image{% else %}summary{% endif %}{% endblock %}
+
+<!-- Structured Data for Articles -->
+{% block structured_data %}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "{% if post.post_type == 'article' %}Article{% else %}BlogPosting{% endif %}",
+    "headline": "{{ post.title }}",
+    "description": "{{ post.excerpt if post.excerpt else (post.content|striptags)[:200] }}",
+    "image": "{% if post.image_filename %}{{ url_for('static', filename='uploads/' + post.image_filename, _external=True) }}{% else %}{{ url_for('static', filename='uploads/sample1.jpg', _external=True) }}{% endif %}",
+    "author": {
+        "@type": "Organization",
+        "name": "Story Hub"
+    },
+    "publisher": {
+        "@type": "Organization",
+        "name": "Story Hub",
+        "logo": {
+            "@type": "ImageObject",
+            "url": "{{ url_for('static', filename='uploads/sample1.jpg', _external=True) }}"
+        }
+    },
+    "datePublished": "{{ post.created_at }}",
+    "dateModified": "{{ post.updated_at if post.updated_at != post.created_at else post.created_at }}",
+    "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "{{ url_for('posts.view_post_by_slug', slug=post.slug, _external=True) if post.slug else url_for('posts.view_post', post_id=post.id, _external=True) }}"
+    },
+    "url": "{{ url_for('posts.view_post_by_slug', slug=post.slug, _external=True) if post.slug else url_for('posts.view_post', post_id=post.id, _external=True) }}",
+    {% if tags %}
+    "keywords": "{{ tags|map(attribute='name')|join(', ') }}",
+    {% endif %}
+    "articleSection": "{{ post.post_type.title() }}",
+    "genre": "{{ post.post_type }}"
+}
+</script>
+{% endblock %}
+
 {% block content %}
 <div class="row">
     <div class="col-lg-8 mx-auto">

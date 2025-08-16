@@ -40,6 +40,19 @@
                 <div class="form-text">Supported formats: PNG, JPG, JPEG, GIF, WebP. Max size: 16MB.</div>
             </div>
             
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    {{ form.image_position_x.label(class="form-label") }}
+                    {{ form.image_position_x(class="form-select") }}
+                    <div class="form-text">Horizontal alignment for cropped images</div>
+                </div>
+                <div class="col-md-6">
+                    {{ form.image_position_y.label(class="form-label") }}
+                    {{ form.image_position_y(class="form-select") }}
+                    <div class="form-text">Vertical alignment for cropped images</div>
+                </div>
+            </div>
+            
             <div class="mb-4">
                 {{ form.content.label(class="form-label") }}
                 {{ form.content(class="form-control", rows="15", placeholder="Write your story or article here...") }}

@@ -33,6 +33,8 @@ def init_db():
                 content TEXT NOT NULL,
                 excerpt TEXT,
                 image_filename TEXT,
+                image_position_x TEXT DEFAULT 'center',
+                image_position_y TEXT DEFAULT 'center',
                 post_type TEXT NOT NULL DEFAULT 'article',
                 slug TEXT,
                 featured BOOLEAN DEFAULT 0,
@@ -69,6 +71,14 @@ def init_db():
             admin_password_hash = generate_password_hash('admin123')
             db.execute('INSERT INTO admin_users (username, password_hash) VALUES (?, ?)', 
                       ('admin', admin_password_hash))
+        
+        # Migration: Add image position columns if they don't exist
+        try:
+            db.execute('SELECT image_position_x FROM posts LIMIT 1')
+        except sqlite3.OperationalError:
+            # Columns don't exist, add them
+            db.execute('ALTER TABLE posts ADD COLUMN image_position_x TEXT DEFAULT "center"')
+            db.execute('ALTER TABLE posts ADD COLUMN image_position_y TEXT DEFAULT "center"')
         
         db.commit()
 
@@ -129,24 +139,24 @@ class PostModel:
         return db.execute('SELECT * FROM posts WHERE slug = ?', (slug,)).fetchone()
     
     @staticmethod
-    def create_post(title, content, excerpt, image_filename, post_type, slug):
+    def create_post(title, content, excerpt, image_filename, post_type, slug, image_position_x='center', image_position_y='center'):
         """Create a new post."""
         db = get_db()
         db.execute('''
-            INSERT INTO posts (title, content, excerpt, image_filename, post_type, slug)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ''', (title, content, excerpt, image_filename, post_type, slug))
+            INSERT INTO posts (title, content, excerpt, image_filename, image_position_x, image_position_y, post_type, slug)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (title, content, excerpt, image_filename, image_position_x, image_position_y, post_type, slug))
         db.commit()
     
     @staticmethod
-    def update_post(post_id, title, content, excerpt, image_filename, post_type, slug):
+    def update_post(post_id, title, content, excerpt, image_filename, post_type, slug, image_position_x='center', image_position_y='center'):
         """Update an existing post."""
         db = get_db()
         db.execute('''
             UPDATE posts
-            SET title = ?, content = ?, excerpt = ?, image_filename = ?, post_type = ?, slug = ?, updated_at = CURRENT_TIMESTAMP
+            SET title = ?, content = ?, excerpt = ?, image_filename = ?, image_position_x = ?, image_position_y = ?, post_type = ?, slug = ?, updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
-        ''', (title, content, excerpt, image_filename, post_type, slug, post_id))
+        ''', (title, content, excerpt, image_filename, image_position_x, image_position_y, post_type, slug, post_id))
         db.commit()
     
     @staticmethod

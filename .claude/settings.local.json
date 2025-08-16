@@ -3,7 +3,8 @@
     "allow": [
       "Bash(git pull:*)",
       "Bash(pip install:*)",
-      "Bash(flask run:*)"
+      "Bash(flask run:*)",
+      "Bash(python:*)"
     ],
     "deny": [],
     "ask": []

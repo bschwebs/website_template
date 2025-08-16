@@ -88,3 +88,82 @@ def parse_tags(tag_string):
             seen.add(tag.lower())
     
     return result
+
+
+def generate_meta_description(content, excerpt=None, max_length=160):
+    """Generate a meta description from post content or excerpt."""
+    if excerpt:
+        description = excerpt.strip()
+    else:
+        # Remove HTML tags and get plain text
+        import re
+        clean_content = re.sub('<[^<]+?>', '', content)
+        description = clean_content.strip()
+    
+    # Truncate to max_length and add ellipsis if needed
+    if len(description) > max_length:
+        description = description[:max_length-3].rsplit(' ', 1)[0] + '...'
+    
+    return description
+
+
+def generate_keywords(tags, post_type=None, additional_keywords=None):
+    """Generate SEO keywords from tags and additional context."""
+    keywords = []
+    
+    # Add tags as keywords
+    if tags:
+        keywords.extend([tag.strip().lower() for tag in tags if tag.strip()])
+    
+    # Add post type as keyword
+    if post_type:
+        keywords.append(post_type.lower())
+    
+    # Add additional keywords
+    if additional_keywords:
+        if isinstance(additional_keywords, str):
+            additional_keywords = [kw.strip() for kw in additional_keywords.split(',')]
+        keywords.extend([kw.strip().lower() for kw in additional_keywords if kw.strip()])
+    
+    # Add default site keywords
+    default_keywords = ['blog', 'story hub', 'articles', 'stories', 'writing']
+    keywords.extend(default_keywords)
+    
+    # Remove duplicates while preserving order
+    seen = set()
+    unique_keywords = []
+    for keyword in keywords:
+        if keyword not in seen:
+            unique_keywords.append(keyword)
+            seen.add(keyword)
+    
+    return ', '.join(unique_keywords[:20])  # Limit to 20 keywords
+
+
+def get_canonical_url(request, slug=None, post_id=None):
+    """Generate canonical URL for SEO."""
+    base_url = request.url_root.rstrip('/')
+    
+    if slug:
+        return f"{base_url}/post/{slug}"
+    elif post_id:
+        return f"{base_url}/post/{post_id}"
+    else:
+        return request.url
+
+
+def clean_html_for_seo(html_content, max_length=200):
+    """Clean HTML content for SEO meta tags."""
+    import re
+    
+    # Remove HTML tags
+    clean_text = re.sub('<[^<]+?>', '', html_content)
+    
+    # Remove extra whitespace
+    clean_text = ' '.join(clean_text.split())
+    
+    # Truncate if needed
+    if len(clean_text) > max_length:
+        clean_text = clean_text[:max_length-3].rsplit(' ', 1)[0] + '...'
+    
+    return clean_text

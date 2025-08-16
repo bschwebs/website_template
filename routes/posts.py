@@ -62,8 +62,12 @@ def create_post():
         # Generate unique slug
         slug = generate_unique_slug(title)
         
+        # Get image positioning
+        image_position_x = form.image_position_x.data
+        image_position_y = form.image_position_y.data
+        
         # Create the post
-        PostModel.create_post(title, content, excerpt, image_filename, post_type, slug)
+        PostModel.create_post(title, content, excerpt, image_filename, post_type, slug, image_position_x, image_position_y)
         
         # Get the newly created post to add tags
         new_post = PostModel.get_post_by_slug(slug)
@@ -95,6 +99,8 @@ def edit_post(post_id):
         form.content.data = post['content']
         form.excerpt.data = post['excerpt']
         form.post_type.data = post['post_type']
+        form.image_position_x.data = post['image_position_x'] if post['image_position_x'] else 'center'
+        form.image_position_y.data = post['image_position_y'] if post['image_position_y'] else 'center'
         
         # Get existing tags
         existing_tags = PostModel.get_post_tags(post_id)
@@ -120,8 +126,12 @@ def edit_post(post_id):
         else:
             slug = post['slug'] if post['slug'] else generate_unique_slug(title, post_id)
         
+        # Get image positioning
+        image_position_x = form.image_position_x.data
+        image_position_y = form.image_position_y.data
+        
         # Update the post
-        PostModel.update_post(post_id, title, content, excerpt, image_filename, post_type, slug)
+        PostModel.update_post(post_id, title, content, excerpt, image_filename, post_type, slug, image_position_x, image_position_y)
         
         # Update tags
         if form.tags.data is not None:  # Check if tags field was submitted

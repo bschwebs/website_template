@@ -14,6 +14,12 @@ class PostForm(FlaskForm):
     post_type = SelectField('Type', choices=[('article', 'Article'), ('story', 'Story')], validators=[DataRequired()])
     tags = StringField('Tags', validators=[Length(max=500)], render_kw={"placeholder": "Enter tags separated by commas (e.g., technology, web development, python)"})
     image = FileField('Image')
+    image_position_x = SelectField('Image Horizontal Position', 
+                                 choices=[('left', 'Left'), ('center', 'Center'), ('right', 'Right')], 
+                                 default='center')
+    image_position_y = SelectField('Image Vertical Position', 
+                                 choices=[('top', 'Top'), ('center', 'Center'), ('bottom', 'Bottom')], 
+                                 default='center')
     submit = SubmitField('Publish')
 
 
