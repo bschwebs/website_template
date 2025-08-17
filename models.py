@@ -73,6 +73,28 @@ def init_db():
                 description TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
+            
+            CREATE TABLE IF NOT EXISTS email_config (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                smtp_server TEXT NOT NULL,
+                smtp_port INTEGER NOT NULL DEFAULT 587,
+                smtp_username TEXT NOT NULL,
+                smtp_password TEXT NOT NULL,
+                from_email TEXT NOT NULL,
+                to_email TEXT NOT NULL,
+                use_tls BOOLEAN DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            
+            CREATE TABLE IF NOT EXISTS contact_messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                email TEXT NOT NULL,
+                subject TEXT NOT NULL,
+                message TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
         ''')
         
         # Create default admin user if none exists
@@ -538,3 +560,53 @@ class AdminModel:
             'total_stories': len([p for p in posts if p['post_type'] == 'story']),
             'total_articles': len([p for p in posts if p['post_type'] == 'article'])
         }
+
+
+class EmailConfigModel:
+    """Model for handling email configuration."""
+    
+    @staticmethod
+    def get_config():
+        """Get email configuration."""
+        db = get_db()
+        return db.execute('SELECT * FROM email_config ORDER BY id DESC LIMIT 1').fetchone()
+    
+    @staticmethod
+    def save_config(smtp_server, smtp_port, smtp_username, smtp_password, from_email, to_email, use_tls=True):
+        """Save email configuration."""
+        db = get_db()
+        # Delete existing config first
+        db.execute('DELETE FROM email_config')
+        # Insert new config
+        db.execute('''
+            INSERT INTO email_config (smtp_server, smtp_port, smtp_username, smtp_password, from_email, to_email, use_tls)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (smtp_server, smtp_port, smtp_username, smtp_password, from_email, to_email, use_tls))
+        db.commit()
+
+
+class ContactModel:
+    """Model for handling contact messages."""
+    
+    @staticmethod
+    def save_message(name, email, subject, message):
+        """Save a contact message."""
+        db = get_db()
+        db.execute('''
+            INSERT INTO contact_messages (name, email, subject, message)
+            VALUES (?, ?, ?, ?)
+        ''', (name, email, subject, message))
+        db.commit()
+    
+    @staticmethod
+    def get_all_messages():
+        """Get all contact messages."""
+        db = get_db()
+        return db.execute('SELECT * FROM contact_messages ORDER BY created_at DESC').fetchall()
+    
+    @staticmethod
+    def delete_message(message_id):
+        """Delete a contact message."""
+        db = get_db()
+        db.execute('DELETE FROM contact_messages WHERE id = ?', (message_id,))
+        db.commit()

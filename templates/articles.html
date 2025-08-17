@@ -5,7 +5,7 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h1><i class="fas fa-newspaper me-2"></i>{% if category %}{{ category.name }} Articles{% else %}Articles{% endif %}</h1>
+        <h1 class="d-flex align-items-center" style="font-size: 2rem;"><img src="{{ url_for('static', filename='img/Japanese History Blog Logo - Styled.png') }}" alt="Japan's History Logo" class="me-2" style="height: 48px; width: 48px;">{% if category %}{{ category.name }} Articles{% else %}Articles{% endif %}</h1>
         {% if total_pages > 1 %}
         <small class="text-muted">Page {{ page }} of {{ total_pages }} ({{ total_articles }} total articles)</small>
         {% endif %}
@@ -48,7 +48,7 @@
 <div class="row g-0" id="articles-grid">
     {% for article in articles %}
     <div class="col-md-6 col-lg-4">
-        <div class="card post-card rounded-0 border-0 overflow-hidden position-relative" style="height: 400px !important; min-height: 400px !important; max-height: 400px !important;">
+        <div class="card post-card border-0 overflow-hidden position-relative" style="height: 400px !important; min-height: 400px !important; max-height: 400px !important;">
             {% if article.image_filename %}
             <!-- Background Image -->
             <div class="position-absolute w-100 h-100" 

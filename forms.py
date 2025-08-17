@@ -3,7 +3,7 @@ Flask-WTF forms for the Story Hub application.
 """
 from flask_wtf import FlaskForm
 from wtforms import StringField, TextAreaField, SelectField, SubmitField, FileField, PasswordField
-from wtforms.validators import DataRequired, Length
+from wtforms.validators import DataRequired, Length, Email
 
 
 class PostForm(FlaskForm):
@@ -58,3 +58,12 @@ class CategoryForm(FlaskForm):
 class DeleteCategoryForm(FlaskForm):
     """Form for category deletion (CSRF protection)."""
     submit = SubmitField('Delete Category')
+
+
+class ContactForm(FlaskForm):
+    """Form for contact page."""
+    name = StringField('Name', validators=[DataRequired(), Length(min=2, max=100)])
+    email = StringField('Email', validators=[DataRequired(), Email(), Length(max=100)])
+    subject = StringField('Subject', validators=[DataRequired(), Length(min=2, max=200)])
+    message = TextAreaField('Message', validators=[DataRequired(), Length(min=10, max=2000)])
+    submit = SubmitField('Send Message')

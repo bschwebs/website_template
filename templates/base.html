@@ -442,6 +442,11 @@
                             <i class="fas fa-tags me-1"></i>Tags
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('main.contact') }}">
+                            <i class="fas fa-envelope me-1"></i>Contact
+                        </a>
+                    </li>
                 </ul>
                 
                 <!-- Search Form -->
@@ -470,6 +475,11 @@
                                 <i class="fas fa-folder me-2"></i>Manage Categories</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('admin.admin_tags') }}">
                                 <i class="fas fa-tags me-2"></i>Manage Tags</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin.admin_email_config') }}">
+                                <i class="fas fa-envelope-open-text me-2"></i>Email Config</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin.admin_contact_messages') }}">
+                                <i class="fas fa-inbox me-2"></i>Contact Messages</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{{ url_for('auth.admin_logout') }}">
                                 <i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>

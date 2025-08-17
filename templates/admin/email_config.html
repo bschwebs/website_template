@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Email Configuration | Admin{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-envelope-open-text me-2"></i>Email Configuration</h1>
+    <a href="{{ url_for('admin.admin_dashboard') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-server me-2"></i>SMTP Server Settings</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label for="smtp_server" class="form-label">SMTP Server *</label>
+                            <input type="text" class="form-control" id="smtp_server" name="smtp_server" 
+                                   value="{{ config.smtp_server if config }}" placeholder="smtp.gmail.com" required>
+                            <div class="form-text">Example: smtp.gmail.com, smtp.outlook.com</div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="smtp_port" class="form-label">Port *</label>
+                            <input type="number" class="form-control" id="smtp_port" name="smtp_port" 
+                                   value="{{ config.smtp_port if config else 587 }}" required>
+                            <div class="form-text">Usually 587 or 465</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="smtp_username" class="form-label">Username *</label>
+                            <input type="text" class="form-control" id="smtp_username" name="smtp_username" 
+                                   value="{{ config.smtp_username if config }}" placeholder="your-email@gmail.com" required>
+                            <div class="form-text">Your email address or username</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="smtp_password" class="form-label">Password *</label>
+                            <input type="password" class="form-control" id="smtp_password" name="smtp_password" 
+                                   value="{{ config.smtp_password if config }}" placeholder="App Password" required>
+                            <div class="form-text">Use app-specific password for Gmail</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="from_email" class="form-label">From Email *</label>
+                            <input type="email" class="form-control" id="from_email" name="from_email" 
+                                   value="{{ config.from_email if config }}" placeholder="noreply@yoursite.com" required>
+                            <div class="form-text">Email address to send from</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="to_email" class="form-label">To Email *</label>
+                            <input type="email" class="form-control" id="to_email" name="to_email" 
+                                   value="{{ config.to_email if config }}" placeholder="admin@yoursite.com" required>
+                            <div class="form-text">Where to send contact messages</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="use_tls" name="use_tls" 
+                                   {{ 'checked' if not config or config.use_tls }}>
+                            <label class="form-check-label" for="use_tls">
+                                Use TLS/SSL
+                            </label>
+                            <div class="form-text">Recommended for security</div>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Save Configuration
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Setup Help</h5>
+            </div>
+            <div class="card-body">
+                <h6>Gmail Setup:</h6>
+                <ul class="small">
+                    <li>Enable 2-factor authentication</li>
+                    <li>Generate an app password</li>
+                    <li>Use smtp.gmail.com:587</li>
+                    <li>Enable TLS</li>
+                </ul>
+                
+                <h6 class="mt-3">Outlook Setup:</h6>
+                <ul class="small">
+                    <li>Use smtp.outlook.com:587</li>
+                    <li>Use your regular password</li>
+                    <li>Enable TLS</li>
+                </ul>
+                
+                <div class="alert alert-warning mt-3">
+                    <small><i class="fas fa-exclamation-triangle me-1"></i>
+                    Passwords are stored securely but consider using app-specific passwords when available.
+                    </small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-body text-center">
+                <a href="{{ url_for('admin.admin_contact_messages') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-messages me-1"></i>View Contact Messages
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

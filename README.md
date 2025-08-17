@@ -10,6 +10,7 @@ A modern, feature-rich blog application built with Flask, featuring comprehensiv
 - **Rich Text Editing**: Support for HTML formatting in posts
 - **Image Uploads**: High-quality image support with automatic filename generation
 - **Post Types**: Distinguish between Articles and Stories
+- **Category System**: Organize articles by categories with dedicated pages
 - **SEO-Friendly URLs**: Automatic slug generation for better search engine optimization
 - **Excerpts**: Optional post summaries for better content preview
 
@@ -24,15 +25,20 @@ A modern, feature-rich blog application built with Flask, featuring comprehensiv
 - **Secure Authentication**: Session-based admin login system
 - **Admin Dashboard**: Overview of post statistics and recent activity
 - **Post Management**: Create, edit, delete, and feature posts
+- **Category Management**: Create and manage article categories
+- **Tag Management**: Organize and clean up tag system
+- **Contact System**: Email configuration and message management
 - **Featured Posts**: Highlight important content with prominent display
 - **Bulk Operations**: Manage multiple posts efficiently
 
 ### User Experience
-- **Responsive Design**: Mobile-first Bootstrap-based UI
+- **Responsive Design**: Mobile-first Bootstrap-based UI with Japanese-inspired theme
 - **Featured Post Display**: Eye-catching hero section with overlay design
+- **Contact Form**: Professional contact system with email integration
 - **Pagination**: Clean navigation through content pages
 - **Navigation Search**: Integrated search bar in the main navigation
 - **Tag Clouds**: Visual tag browsing with post counts
+- **Category Navigation**: Dropdown navigation for article categories
 
 ## 🚀 Quick Start
 
@@ -79,6 +85,7 @@ A modern, feature-rich blog application built with Flask, featuring comprehensiv
    - Open your browser and navigate to `http://127.0.0.1:5000`
    - Admin login: `http://127.0.0.1:5000/admin/login`
    - Default credentials: `admin` / `admin123`
+   - Contact page: `http://127.0.0.1:5000/contact`
 
 ## 📁 Project Structure
 
@@ -119,10 +126,18 @@ The application uses SQLite with the following main tables:
 - `content` - HTML content
 - `excerpt` - Optional summary
 - `image_filename` - Uploaded image reference
+- `image_position_x/y` - Image positioning for display
 - `post_type` - 'article' or 'story'
+- `category_id` - Foreign key to categories (articles only)
 - `slug` - SEO-friendly URL slug
 - `featured` - Boolean for featured posts
 - `created_at` / `updated_at` - Timestamps
+
+### Categories Table
+- `id` - Primary key
+- `name` - Category display name
+- `slug` - URL-friendly category identifier
+- `description` - Category description
 
 ### Tags Table
 - `id` - Primary key
@@ -132,6 +147,24 @@ The application uses SQLite with the following main tables:
 ### Post_Tags Table (Many-to-Many)
 - `post_id` - Foreign key to posts
 - `tag_id` - Foreign key to tags
+
+### Contact_Messages Table
+- `id` - Primary key
+- `name` - Sender name
+- `email` - Sender email
+- `subject` - Message subject
+- `message` - Message content
+- `created_at` - Timestamp
+
+### Email_Config Table
+- `id` - Primary key
+- `smtp_server` - SMTP server address
+- `smtp_port` - SMTP port number
+- `smtp_username` - SMTP username
+- `smtp_password` - SMTP password
+- `from_email` - From email address
+- `to_email` - Destination email address
+- `use_tls` - TLS/SSL flag
 
 ### Admin_Users Table
 - `id` - Primary key
@@ -162,6 +195,21 @@ class Config:
     UPLOAD_FOLDER = 'static/uploads'
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB
 ```
+
+### Contact System Setup
+Configure email settings through the admin panel at `/admin/email-config`:
+
+1. **SMTP Server**: Your email provider's SMTP server (e.g., `smtp.gmail.com`)
+2. **Port**: Usually 587 for TLS or 465 for SSL
+3. **Username/Password**: Your email credentials (use app passwords for Gmail)
+4. **From/To Emails**: Configure sender and recipient addresses
+5. **TLS/SSL**: Enable for secure email transmission
+
+**Supported Email Providers:**
+- Gmail: `smtp.gmail.com:587` (requires app password)
+- Outlook: `smtp.outlook.com:587`
+- Yahoo: `smtp.mail.yahoo.com:587`
+- Custom SMTP servers
 
 ### Adding New Features
 The modular architecture makes it easy to extend:
@@ -281,6 +329,9 @@ pytest tests/
 ### Manual Testing Checklist
 - [ ] Admin login/logout functionality
 - [ ] Post creation with tags and images
+- [ ] Category management and article categorization
+- [ ] Contact form submission and email sending
+- [ ] Email configuration in admin panel
 - [ ] Search functionality across different content
 - [ ] Tag-based filtering
 - [ ] Pagination on all list views
@@ -346,12 +397,14 @@ A: Ensure the database has been properly initialized with the latest schema.
 - [ ] Comment system for posts
 - [ ] RSS/Atom feed generation
 - [ ] Advanced admin analytics
-- [ ] Email notifications
+- [ ] Email notifications for new contact messages
 - [ ] Social media integration
 - [ ] Advanced text editor (WYSIWYG)
 - [ ] Post scheduling
 - [ ] SEO optimization tools
 - [ ] Performance monitoring
+- [ ] Contact form spam protection
+- [ ] Newsletter subscription system
 
 ## 📊 Performance
 

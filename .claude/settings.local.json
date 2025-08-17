@@ -8,6 +8,9 @@
       "Bash(git push:*)"
     ],
     "deny": [],
-    "ask": []
+    "ask": [],
+    "additionalDirectories": [
+      "C:\\c\\Users\\bschw\\dev"
+    ]
   }
 }

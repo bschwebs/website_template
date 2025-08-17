@@ -1,9 +1,13 @@
 """
 Main routes for the Story Hub application.
 """
-from flask import Blueprint, render_template, request
-from models import PostModel, TagModel, CategoryModel
+from flask import Blueprint, render_template, request, flash, redirect, url_for
+from models import PostModel, TagModel, CategoryModel, ContactModel, EmailConfigModel
 from utils import is_admin_logged_in
+from forms import ContactForm
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 main = Blueprint('main', __name__)
 
@@ -156,6 +160,77 @@ def articles_by_category(category_slug):
                          per_page=per_page,
                          total_articles=total_articles,
                          category=category)
+
+
+@main.route('/contact', methods=['GET', 'POST'])
+def contact():
+    """Contact form page."""
+    form = ContactForm()
+    
+    
+    if form.validate_on_submit():
+        name = form.name.data
+        email = form.email.data
+        subject = form.subject.data
+        message = form.message.data
+        
+        # Save message to database
+        try:
+            ContactModel.save_message(name, email, subject, message)
+            
+            # Try to send email if configured
+            email_config = EmailConfigModel.get_config()
+            if email_config:
+                try:
+                    send_contact_email(email_config, name, email, subject, message)
+                    flash('Thank you for your message! We\'ll get back to you soon.', 'success')
+                except Exception as e:
+                    # Email failed but message was saved
+                    flash('Thank you for your message! We\'ll get back to you soon.', 'success')
+            else:
+                flash('Thank you for your message! We\'ll get back to you soon.', 'success')
+            
+            return redirect(url_for('main.contact'))
+            
+        except Exception as e:
+            flash('Sorry, there was an error sending your message. Please try again.', 'error')
+    
+    return render_template('contact.html', form=form)
+
+
+def send_contact_email(config, name, email, subject, message):
+    """Send contact form email."""
+    # Create message
+    msg = MIMEMultipart()
+    msg['From'] = config['from_email']
+    msg['To'] = config['to_email']
+    msg['Subject'] = f"Contact Form: {subject}"
+    
+    # Email body
+    body = f"""
+New contact form submission:
+
+Name: {name}
+Email: {email}
+Subject: {subject}
+
+Message:
+{message}
+
+---
+This message was sent via the contact form on Japan's History.
+Reply directly to this email to respond to {name} at {email}.
+"""
+    
+    msg.attach(MIMEText(body, 'plain'))
+    
+    # Send email
+    server = smtplib.SMTP(config['smtp_server'], config['smtp_port'])
+    if config['use_tls']:
+        server.starttls()
+    server.login(config['smtp_username'], config['smtp_password'])
+    server.send_message(msg)
+    server.quit()
 
 
 # Add admin status and categories to template context

@@ -2,7 +2,7 @@
 Admin routes for the Story Hub application.
 """
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from models import PostModel, AdminModel, TagModel, CategoryModel
+from models import PostModel, AdminModel, TagModel, CategoryModel, EmailConfigModel, ContactModel
 from forms import DeleteForm, CategoryForm, DeleteCategoryForm
 from utils import admin_required, delete_file
 
@@ -182,3 +182,64 @@ def admin_delete_category(category_id):
             flash('Category not found.', 'error')
     
     return redirect(url_for('admin.admin_categories'))
+
+
+@admin.route('/admin/email-config', methods=['GET', 'POST'])
+@admin_required
+def admin_email_config():
+    """Email server configuration."""
+    if request.method == 'POST':
+        smtp_server = request.form.get('smtp_server', '').strip()
+        smtp_port = request.form.get('smtp_port', 587, type=int)
+        smtp_username = request.form.get('smtp_username', '').strip()
+        smtp_password = request.form.get('smtp_password', '').strip()
+        from_email = request.form.get('from_email', '').strip()
+        to_email = request.form.get('to_email', '').strip()
+        use_tls = bool(request.form.get('use_tls'))
+        
+        # Validate required fields
+        if not all([smtp_server, smtp_username, smtp_password, from_email, to_email]):
+            flash('All fields are required.', 'error')
+        else:
+            try:
+                EmailConfigModel.save_config(
+                    smtp_server=smtp_server,
+                    smtp_port=smtp_port,
+                    smtp_username=smtp_username,
+                    smtp_password=smtp_password,
+                    from_email=from_email,
+                    to_email=to_email,
+                    use_tls=use_tls
+                )
+                flash('Email configuration saved successfully!', 'success')
+                return redirect(url_for('admin.admin_email_config'))
+            except Exception as e:
+                flash('Error saving email configuration.', 'error')
+    
+    # Get current configuration
+    config = EmailConfigModel.get_config()
+    return render_template('admin/email_config.html', config=config)
+
+
+@admin.route('/admin/contact-messages')
+@admin_required
+def admin_contact_messages():
+    """View contact messages."""
+    messages = ContactModel.get_all_messages()
+    delete_form = DeleteForm()
+    return render_template('admin/contact_messages.html', messages=messages, delete_form=delete_form)
+
+
+@admin.route('/admin/contact-messages/<int:message_id>/delete', methods=['POST'])
+@admin_required
+def admin_delete_contact_message(message_id):
+    """Delete a contact message."""
+    form = DeleteForm()
+    if form.validate_on_submit():
+        try:
+            ContactModel.delete_message(message_id)
+            flash('Contact message deleted successfully!', 'success')
+        except Exception as e:
+            flash('Error deleting contact message.', 'error')
+    
+    return redirect(url_for('admin.admin_contact_messages'))
