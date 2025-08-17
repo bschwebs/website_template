@@ -12,6 +12,7 @@ class PostForm(FlaskForm):
     content = TextAreaField('Content', validators=[DataRequired()])
     excerpt = StringField('Excerpt', validators=[Length(max=200)])
     post_type = SelectField('Type', choices=[('article', 'Article'), ('story', 'Story')], validators=[DataRequired()])
+    category_id = SelectField('Category', choices=[], coerce=lambda x: int(x) if x else None, render_kw={"data-post-type": "article"})
     tags = StringField('Tags', validators=[Length(max=500)], render_kw={"placeholder": "Enter tags separated by commas (e.g., technology, web development, python)"})
     image = FileField('Image')
     image_position_x = SelectField('Image Horizontal Position', 
@@ -44,3 +45,16 @@ class SearchForm(FlaskForm):
 class AdminPostForm(PostForm):
     """Admin version of the post form (inherits from PostForm)."""
     pass
+
+
+class CategoryForm(FlaskForm):
+    """Form for creating and editing categories."""
+    name = StringField('Category Name', validators=[DataRequired(), Length(min=2, max=50)])
+    slug = StringField('URL Slug', validators=[DataRequired(), Length(min=2, max=50)])
+    description = TextAreaField('Description', validators=[Length(max=200)])
+    submit = SubmitField('Save Category')
+
+
+class DeleteCategoryForm(FlaskForm):
+    """Form for category deletion (CSRF protection)."""
+    submit = SubmitField('Delete Category')

@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} | Admin - Japan's History{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-folder me-2"></i>{{ title }}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ form.name.label(class="form-label") }}
+                        {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else "")) }}
+                        {% if form.name.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.name.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">The display name for this category</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.slug.label(class="form-label") }}
+                        <div class="input-group">
+                            <span class="input-group-text">/articles/category/</span>
+                            {{ form.slug(class="form-control" + (" is-invalid" if form.slug.errors else "")) }}
+                        </div>
+                        {% if form.slug.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.slug.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">URL-friendly version (lowercase, no spaces, use hyphens)</div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        {{ form.description.label(class="form-label") }}
+                        {{ form.description(class="form-control", rows="3") }}
+                        {% if form.description.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.description.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">Optional description of what this category covers</div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('admin.admin_categories') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>Back to Categories
+                        </a>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        {% if category %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Category Information</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-sm-4"><strong>Created:</strong></div>
+                    <div class="col-sm-8">{{ category.created_at[:19] }}</div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-sm-4"><strong>Articles:</strong></div>
+                    <div class="col-sm-8">
+                        <span class="badge bg-primary me-2">{{ category.post_count if category.post_count else 0 }}</span>
+                        {% if category.post_count and category.post_count > 0 %}
+                        <a href="{{ url_for('main.articles_by_category', category_slug=category.slug) }}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-eye me-1"></i>View Articles
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// Auto-generate slug from name
+document.addEventListener('DOMContentLoaded', function() {
+    const nameField = document.getElementById('name');
+    const slugField = document.getElementById('slug');
+    
+    // Only auto-generate for new categories
+    {% if not category %}
+    nameField.addEventListener('input', function() {
+        const name = this.value;
+        const slug = name.toLowerCase()
+                        .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+                        .replace(/\s+/g, '-')         // Replace spaces with hyphens
+                        .replace(/-+/g, '-')          // Replace multiple hyphens with single
+                        .replace(/^-|-$/g, '');       // Remove leading/trailing hyphens
+        slugField.value = slug;
+    });
+    {% endif %}
+});
+</script>
+{% endblock %}

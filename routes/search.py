@@ -15,7 +15,12 @@ def search_posts():
     form = SearchForm()
     query = request.args.get('query', '').strip()
     page = request.args.get('page', 1, type=int)
-    per_page = 10
+    
+    # Responsive pagination - 6 for larger devices, 3 for mobile
+    # We'll use JavaScript to determine this, but default to 6
+    per_page = request.args.get('per_page', 6, type=int)
+    if per_page not in [3, 6]:
+        per_page = 6  # Default fallback
     
     posts = []
     total_posts = 0
@@ -47,7 +52,8 @@ def search_posts():
                          has_prev=has_prev,
                          has_next=has_next,
                          prev_page=prev_page,
-                         next_page=next_page)
+                         next_page=next_page,
+                         per_page=per_page)
 
 
 @search.route('/tag/<slug>')

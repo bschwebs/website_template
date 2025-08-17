@@ -14,13 +14,11 @@
 {% block content %}
 <div class="row">
     <div class="col-12">
-        <div class="jumbotron bg-light p-5 rounded mb-4 d-flex align-items-center">
-            <div class="me-4">
-                <img src="{{ url_for('static', filename='img/taiko_drum_tomoe.png') }}" alt="Taiko Drum" class="img-fluid" style="max-height: 150px; opacity: 0.8;">
-            </div>
-            <div class="flex-grow-1">
-                <h1 class="display-4">Japan's History</h1>
-                <p class="lead">Discover amazing stories and insightful articles about the fascinating world of Japanese history and culture.</p>
+        <div class="jumbotron jumbotron-bg p-5 rounded mb-4 position-relative overflow-hidden d-flex align-items-end">
+            <div class="position-absolute w-100 h-100" style="background: linear-gradient(to bottom, rgba(45, 24, 16, 0.3) 0%, rgba(45, 24, 16, 0.8) 100%); top: 0; left: 0;"></div>
+            <div class="position-relative">
+                <h1 class="display-4 mb-3">Japan's History</h1>
+                <p class="lead mb-0">Discover amazing stories and insightful articles about the fascinating world of Japanese history and culture.</p>
             </div>
         </div>
     </div>

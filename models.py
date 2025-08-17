@@ -36,10 +36,12 @@ def init_db():
                 image_position_x TEXT DEFAULT 'center',
                 image_position_y TEXT DEFAULT 'center',
                 post_type TEXT NOT NULL DEFAULT 'article',
+                category_id INTEGER,
                 slug TEXT,
                 featured BOOLEAN DEFAULT 0,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE SET NULL
             );
             
             CREATE TABLE IF NOT EXISTS tags (
@@ -63,6 +65,14 @@ def init_db():
                 password_hash TEXT NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
+            
+            CREATE TABLE IF NOT EXISTS categories (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT UNIQUE NOT NULL,
+                slug TEXT UNIQUE NOT NULL,
+                description TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
         ''')
         
         # Create default admin user if none exists
@@ -79,6 +89,28 @@ def init_db():
             # Columns don't exist, add them
             db.execute('ALTER TABLE posts ADD COLUMN image_position_x TEXT DEFAULT "center"')
             db.execute('ALTER TABLE posts ADD COLUMN image_position_y TEXT DEFAULT "center"')
+        
+        # Migration: Add category_id column if it doesn't exist
+        try:
+            db.execute('SELECT category_id FROM posts LIMIT 1')
+        except sqlite3.OperationalError:
+            # Column doesn't exist, add it
+            db.execute('ALTER TABLE posts ADD COLUMN category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL')
+        
+        # Create default categories for articles
+        categories_exist = db.execute('SELECT COUNT(*) FROM categories').fetchone()[0]
+        if categories_exist == 0:
+            default_categories = [
+                ('History', 'history', 'Historical events and periods in Japanese history'),
+                ('Culture', 'culture', 'Japanese traditions, customs, and cultural practices'),
+                ('Art', 'art', 'Traditional and modern Japanese arts and crafts'),
+                ('Religion', 'religion', 'Shintoism, Buddhism, and spiritual practices in Japan'),
+                ('Politics', 'politics', 'Government, politics, and political history of Japan'),
+                ('Society', 'society', 'Social structures, daily life, and modern Japanese society')
+            ]
+            for name, slug, description in default_categories:
+                db.execute('INSERT INTO categories (name, slug, description) VALUES (?, ?, ?)', 
+                          (name, slug, description))
         
         db.commit()
 
@@ -104,6 +136,41 @@ class PostModel:
             WHERE post_type = ?
             ORDER BY created_at DESC
         ''', (post_type,)).fetchall()
+    
+    @staticmethod
+    def get_posts_by_type_paginated(post_type, page=1, per_page=6, category_id=None):
+        """Get paginated posts filtered by type and optionally by category."""
+        db = get_db()
+        offset = (page - 1) * per_page
+        
+        if category_id and post_type == 'article':
+            return db.execute('''
+                SELECT p.*, c.name as category_name, c.slug as category_slug
+                FROM posts p
+                LEFT JOIN categories c ON p.category_id = c.id
+                WHERE p.post_type = ? AND p.category_id = ?
+                ORDER BY p.created_at DESC
+                LIMIT ? OFFSET ?
+            ''', (post_type, category_id, per_page, offset)).fetchall()
+        else:
+            return db.execute('''
+                SELECT p.*, c.name as category_name, c.slug as category_slug
+                FROM posts p
+                LEFT JOIN categories c ON p.category_id = c.id
+                WHERE p.post_type = ?
+                ORDER BY p.created_at DESC
+                LIMIT ? OFFSET ?
+            ''', (post_type, per_page, offset)).fetchall()
+    
+    @staticmethod
+    def count_posts_by_type(post_type, category_id=None):
+        """Count posts by type and optionally by category."""
+        db = get_db()
+        if category_id and post_type == 'article':
+            return db.execute('SELECT COUNT(*) FROM posts WHERE post_type = ? AND category_id = ?', 
+                            (post_type, category_id)).fetchone()[0]
+        else:
+            return db.execute('SELECT COUNT(*) FROM posts WHERE post_type = ?', (post_type,)).fetchone()[0]
     
     @staticmethod
     def get_featured_post():
@@ -139,24 +206,24 @@ class PostModel:
         return db.execute('SELECT * FROM posts WHERE slug = ?', (slug,)).fetchone()
     
     @staticmethod
-    def create_post(title, content, excerpt, image_filename, post_type, slug, image_position_x='center', image_position_y='center'):
+    def create_post(title, content, excerpt, image_filename, post_type, slug, image_position_x='center', image_position_y='center', category_id=None):
         """Create a new post."""
         db = get_db()
         db.execute('''
-            INSERT INTO posts (title, content, excerpt, image_filename, image_position_x, image_position_y, post_type, slug)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (title, content, excerpt, image_filename, image_position_x, image_position_y, post_type, slug))
+            INSERT INTO posts (title, content, excerpt, image_filename, image_position_x, image_position_y, post_type, slug, category_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (title, content, excerpt, image_filename, image_position_x, image_position_y, post_type, slug, category_id))
         db.commit()
     
     @staticmethod
-    def update_post(post_id, title, content, excerpt, image_filename, post_type, slug, image_position_x='center', image_position_y='center'):
+    def update_post(post_id, title, content, excerpt, image_filename, post_type, slug, image_position_x='center', image_position_y='center', category_id=None):
         """Update an existing post."""
         db = get_db()
         db.execute('''
             UPDATE posts
-            SET title = ?, content = ?, excerpt = ?, image_filename = ?, image_position_x = ?, image_position_y = ?, post_type = ?, slug = ?, updated_at = CURRENT_TIMESTAMP
+            SET title = ?, content = ?, excerpt = ?, image_filename = ?, image_position_x = ?, image_position_y = ?, post_type = ?, slug = ?, category_id = ?, updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
-        ''', (title, content, excerpt, image_filename, image_position_x, image_position_y, post_type, slug, post_id))
+        ''', (title, content, excerpt, image_filename, image_position_x, image_position_y, post_type, slug, category_id, post_id))
         db.commit()
     
     @staticmethod
@@ -381,6 +448,75 @@ class TagModel:
         db.execute('DELETE FROM post_tags WHERE tag_id = ?', (tag_id,))
         db.execute('DELETE FROM tags WHERE id = ?', (tag_id,))
         db.commit()
+
+
+class CategoryModel:
+    """Model for handling category-related database operations."""
+    
+    @staticmethod
+    def get_all_categories():
+        """Get all categories."""
+        db = get_db()
+        return db.execute('''
+            SELECT c.*, COUNT(p.id) as post_count
+            FROM categories c
+            LEFT JOIN posts p ON c.id = p.category_id AND p.post_type = 'article'
+            GROUP BY c.id
+            ORDER BY c.name
+        ''').fetchall()
+    
+    @staticmethod
+    def get_category_by_slug(slug):
+        """Get category by slug."""
+        db = get_db()
+        return db.execute('SELECT * FROM categories WHERE slug = ?', (slug,)).fetchone()
+    
+    @staticmethod
+    def get_category_by_id(category_id):
+        """Get category by ID."""
+        db = get_db()
+        return db.execute('SELECT * FROM categories WHERE id = ?', (category_id,)).fetchone()
+    
+    @staticmethod
+    def create_category(name, slug, description=None):
+        """Create a new category."""
+        db = get_db()
+        db.execute('''
+            INSERT INTO categories (name, slug, description)
+            VALUES (?, ?, ?)
+        ''', (name, slug, description))
+        db.commit()
+    
+    @staticmethod
+    def update_category(category_id, name, slug, description=None):
+        """Update an existing category."""
+        db = get_db()
+        db.execute('''
+            UPDATE categories
+            SET name = ?, slug = ?, description = ?
+            WHERE id = ?
+        ''', (name, slug, description, category_id))
+        db.commit()
+    
+    @staticmethod
+    def delete_category(category_id):
+        """Delete a category and unlink posts."""
+        db = get_db()
+        # First, unlink posts from this category
+        db.execute('UPDATE posts SET category_id = NULL WHERE category_id = ?', (category_id,))
+        # Then delete the category
+        db.execute('DELETE FROM categories WHERE id = ?', (category_id,))
+        db.commit()
+    
+    @staticmethod
+    def slug_exists(slug, exclude_id=None):
+        """Check if a category slug already exists."""
+        db = get_db()
+        if exclude_id:
+            result = db.execute('SELECT id FROM categories WHERE slug = ? AND id != ?', (slug, exclude_id)).fetchone()
+        else:
+            result = db.execute('SELECT id FROM categories WHERE slug = ?', (slug,)).fetchone()
+        return result is not None
 
 
 class AdminModel:

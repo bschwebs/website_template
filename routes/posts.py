@@ -2,7 +2,7 @@
 Post-related routes for the Story Hub application.
 """
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from models import PostModel
+from models import PostModel, CategoryModel
 from forms import PostForm, DeleteForm
 from utils import admin_required, generate_unique_slug, save_uploaded_file, delete_file, parse_tags
 from flask import current_app
@@ -48,6 +48,11 @@ def view_post(post_id):
 def create_post():
     """Create a new post."""
     form = PostForm()
+    
+    # Populate category choices
+    categories = CategoryModel.get_all_categories()
+    form.category_id.choices = [(None, 'No Category')] + [(cat['id'], cat['name']) for cat in categories]
+    
     if form.validate_on_submit():
         title = form.title.data
         content = form.content.data
@@ -66,8 +71,11 @@ def create_post():
         image_position_x = form.image_position_x.data
         image_position_y = form.image_position_y.data
         
+        # Get category (only for articles)
+        category_id = form.category_id.data if post_type == 'article' and form.category_id.data else None
+        
         # Create the post
-        PostModel.create_post(title, content, excerpt, image_filename, post_type, slug, image_position_x, image_position_y)
+        PostModel.create_post(title, content, excerpt, image_filename, post_type, slug, image_position_x, image_position_y, category_id)
         
         # Get the newly created post to add tags
         new_post = PostModel.get_post_by_slug(slug)
@@ -93,12 +101,17 @@ def edit_post(post_id):
     
     form = PostForm()
     
+    # Populate category choices
+    categories = CategoryModel.get_all_categories()
+    form.category_id.choices = [(None, 'No Category')] + [(cat['id'], cat['name']) for cat in categories]
+    
     # Pre-populate form with existing data on GET request
     if request.method == 'GET':
         form.title.data = post['title']
         form.content.data = post['content']
         form.excerpt.data = post['excerpt']
         form.post_type.data = post['post_type']
+        form.category_id.data = post['category_id'] if post['category_id'] else None
         form.image_position_x.data = post['image_position_x'] if post['image_position_x'] else 'center'
         form.image_position_y.data = post['image_position_y'] if post['image_position_y'] else 'center'
         
@@ -130,8 +143,11 @@ def edit_post(post_id):
         image_position_x = form.image_position_x.data
         image_position_y = form.image_position_y.data
         
+        # Get category (only for articles)
+        category_id = form.category_id.data if post_type == 'article' and form.category_id.data else None
+        
         # Update the post
-        PostModel.update_post(post_id, title, content, excerpt, image_filename, post_type, slug, image_position_x, image_position_y)
+        PostModel.update_post(post_id, title, content, excerpt, image_filename, post_type, slug, image_position_x, image_position_y, category_id)
         
         # Update tags
         if form.tags.data is not None:  # Check if tags field was submitted

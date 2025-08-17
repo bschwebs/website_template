@@ -12,7 +12,13 @@
 
             <div class="mb-3">
                 {{ form.post_type.label(class="form-label") }}
-                {{ form.post_type(class="form-select") }}
+                {{ form.post_type(class="form-select", id="post_type") }}
+            </div>
+            
+            <div class="mb-3" id="category-field" style="display: none;">
+                {{ form.category_id.label(class="form-label") }}
+                {{ form.category_id(class="form-select") }}
+                <div class="form-text">Select a category for this article (only applies to articles)</div>
             </div>
             
             <div class="mb-3">
@@ -77,4 +83,25 @@
         </form>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const postTypeField = document.getElementById('post_type');
+    const categoryField = document.getElementById('category-field');
+    
+    function toggleCategoryField() {
+        if (postTypeField.value === 'article') {
+            categoryField.style.display = 'block';
+        } else {
+            categoryField.style.display = 'none';
+        }
+    }
+    
+    // Initial check
+    toggleCategoryField();
+    
+    // Listen for changes
+    postTypeField.addEventListener('change', toggleCategoryField);
+});
+</script>
 {% endblock %}
