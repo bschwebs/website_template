@@ -369,6 +369,12 @@ class TagModel:
         return db.execute('SELECT * FROM tags WHERE slug = ?', (slug,)).fetchone()
     
     @staticmethod
+    def get_tag_by_id(tag_id):
+        """Get tag by ID."""
+        db = get_db()
+        return db.execute('SELECT * FROM tags WHERE id = ?', (tag_id,)).fetchone()
+    
+    @staticmethod
     def delete_tag(tag_id):
         """Delete a tag and its associations."""
         db = get_db()

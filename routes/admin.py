@@ -2,7 +2,7 @@
 Admin routes for the Story Hub application.
 """
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from models import PostModel, AdminModel
+from models import PostModel, AdminModel, TagModel
 from forms import DeleteForm
 from utils import admin_required, delete_file
 
@@ -74,3 +74,29 @@ def admin_unfeature_post(post_id):
         flash('Post not found.', 'error')
     
     return redirect(url_for('admin.admin_posts'))
+
+
+@admin.route('/admin/tags')
+@admin_required
+def admin_tags():
+    """Admin tags management."""
+    tags = TagModel.get_all_tags()
+    return render_template('admin/tags.html', tags=tags)
+
+
+@admin.route('/admin/tags/<int:tag_id>/delete', methods=['POST'])
+@admin_required
+def admin_delete_tag(tag_id):
+    """Delete a tag from admin interface."""
+    form = DeleteForm()
+    if form.validate_on_submit():
+        tag = TagModel.get_tag_by_id(tag_id)
+        
+        if tag:
+            # Delete the tag and its associations
+            TagModel.delete_tag(tag_id)
+            flash('Tag deleted successfully!', 'success')
+        else:
+            flash('Tag not found.', 'error')
+    
+    return redirect(url_for('admin.admin_tags'))

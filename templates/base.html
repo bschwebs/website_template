@@ -112,6 +112,56 @@
         .post-card:hover {
             transform: translateY(-5px);
         }
+        
+        /* Rounded corners for post grid outer edges */
+        .row.g-0 .col-md-6:first-child .post-card {
+            border-top-left-radius: 15px !important;
+            border-bottom-left-radius: 15px !important;
+        }
+        
+        .row.g-0 .col-md-6:last-child .post-card {
+            border-top-right-radius: 15px !important;
+            border-bottom-right-radius: 15px !important;
+        }
+        
+        @media (min-width: 992px) {
+            .row.g-0 .col-lg-4:first-child .post-card {
+                border-top-left-radius: 15px !important;
+                border-bottom-left-radius: 15px !important;
+            }
+            
+            .row.g-0 .col-lg-4:nth-child(3) .post-card {
+                border-top-right-radius: 15px !important;
+            }
+            
+            .row.g-0 .col-lg-4:nth-child(3n+1) .post-card {
+                border-top-left-radius: 15px !important;
+                border-bottom-left-radius: 15px !important;
+            }
+            
+            .row.g-0 .col-lg-4:nth-child(3n) .post-card {
+                border-top-right-radius: 15px !important;
+                border-bottom-right-radius: 15px !important;
+            }
+        }
+        
+        /* Override bottom corners for middle cards in bottom row */
+        @media (max-width: 991px) {
+            .row.g-0 .col-md-6:nth-last-child(2):not(:first-child) .post-card {
+                border-bottom-left-radius: 0 !important;
+            }
+            
+            .row.g-0 .col-md-6:last-child:not(:nth-child(odd)) .post-card {
+                border-bottom-right-radius: 15px !important;
+            }
+        }
+        
+        @media (min-width: 992px) {
+            .row.g-0 .col-lg-4:nth-last-child(2) .post-card {
+                border-bottom-left-radius: 0 !important;
+                border-bottom-right-radius: 0 !important;
+            }
+        }
         .post-image {
             height: 250px;
             object-fit: cover;
@@ -225,6 +275,50 @@
             padding-top: 76px;
             padding-bottom: 56px;
         }
+        
+        /* Admin dashboard specific styles */
+        .bg-primary, .bg-success, .bg-info {
+            background: linear-gradient(135deg, var(--text-cream) 0%, var(--accent-light) 100%) !important;
+            color: var(--primary-dark) !important;
+        }
+        
+        .bg-primary h5, .bg-success h5, .bg-info h5,
+        .bg-primary h2, .bg-success h2, .bg-info h2,
+        .bg-primary .card-title, .bg-success .card-title, .bg-info .card-title {
+            color: var(--primary-dark) !important;
+            font-weight: bold;
+        }
+        
+        .table {
+            color: var(--primary-dark) !important;
+        }
+        
+        .table th, .table td {
+            color: var(--primary-dark) !important;
+            font-weight: 500;
+        }
+        
+        .card-header h5 {
+            color: var(--primary-dark) !important;
+            font-weight: bold;
+        }
+        
+        .table a {
+            color: var(--accent-copper) !important;
+        }
+        
+        .table a:hover {
+            color: var(--primary-brown) !important;
+        }
+        
+        /* Tags page specific styling */
+        .card-title a {
+            color: var(--accent-copper) !important;
+        }
+        
+        .card-title a:hover {
+            color: var(--primary-brown) !important;
+        }
     </style>
 </head>
 <body>
@@ -277,6 +371,8 @@
                                 <i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('admin.admin_posts') }}">
                                 <i class="fas fa-list me-2"></i>Manage Posts</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin.admin_tags') }}">
+                                <i class="fas fa-tags me-2"></i>Manage Tags</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{{ url_for('auth.admin_logout') }}">
                                 <i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
