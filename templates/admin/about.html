@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+
+{% block title %}About Page Management | Admin{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="d-flex align-items-center" style="font-size: 2rem;">
+        <img src="{{ url_for('static', filename='img/Japanese History Blog Logo - Styled.png') }}" alt="Japan's History Logo" class="me-2" style="height: 48px; width: 48px;">
+        About Page Management
+    </h1>
+</div>
+
+<!-- Quick Links -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-link me-2"></i>Quick Links</h5>
+            </div>
+            <div class="card-body">
+                <div class="btn-group" role="group">
+                    <a href="{{ url_for('admin.admin_dashboard') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                    </a>
+                    <a href="{{ url_for('admin.admin_posts') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-list me-1"></i>Manage Posts
+                    </a>
+                    <a href="{{ url_for('admin.admin_categories') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-folder me-1"></i>Manage Categories
+                    </a>
+                    <a href="{{ url_for('admin.admin_tags') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-tags me-1"></i>Manage Tags
+                    </a>
+                    <a href="{{ url_for('admin.admin_email_config') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-envelope-open-text me-1"></i>Email Config
+                    </a>
+                    <a href="{{ url_for('admin.admin_contact_messages') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-inbox me-1"></i>Contact Messages
+                    </a>
+                    <a href="{{ url_for('admin.admin_change_password') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-lock me-1"></i>Change Password
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-user me-2"></i>About Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.name.label(class="form-label") }}
+                            {{ form.name(class="form-control") }}
+                            {% if form.name.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.name.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.email.label(class="form-label") }}
+                            {{ form.email(class="form-control") }}
+                            {% if form.email.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.email.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.bio.label(class="form-label") }}
+                        {{ form.bio(class="form-control", rows="5", placeholder="Tell visitors about yourself...") }}
+                        {% if form.bio.errors %}
+                            <div class="text-danger small">
+                                {% for error in form.bio.errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.image.label(class="form-label") }}
+                        {{ form.image(class="form-control") }}
+                        {% if form.image.errors %}
+                            <div class="text-danger small">
+                                {% for error in form.image.errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        {% if about_info and about_info.image_filename %}
+                            <div class="mt-2">
+                                <small class="text-muted">Current image:</small>
+                                <img src="{{ url_for('static', filename='uploads/' + about_info.image_filename) }}" 
+                                     alt="Current profile image" class="img-thumbnail ms-2" style="max-height: 100px;">
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <h6 class="mt-4 mb-3">Social Links</h6>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.website_url.label(class="form-label") }}
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-globe"></i></span>
+                                {{ form.website_url(class="form-control", placeholder="https://yourwebsite.com") }}
+                            </div>
+                            {% if form.website_url.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.website_url.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.github_url.label(class="form-label") }}
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fab fa-github"></i></span>
+                                {{ form.github_url(class="form-control", placeholder="https://github.com/username") }}
+                            </div>
+                            {% if form.github_url.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.github_url.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.linkedin_url.label(class="form-label") }}
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fab fa-linkedin"></i></span>
+                                {{ form.linkedin_url(class="form-control", placeholder="https://linkedin.com/in/username") }}
+                            </div>
+                            {% if form.linkedin_url.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.linkedin_url.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.twitter_url.label(class="form-label") }}
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fab fa-twitter"></i></span>
+                                {{ form.twitter_url(class="form-control", placeholder="https://twitter.com/username") }}
+                            </div>
+                            {% if form.twitter_url.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.twitter_url.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-eye me-2"></i>Preview
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if about_info %}
+                    <div class="text-center mb-3">
+                        {% if about_info.image_filename %}
+                            <img src="{{ url_for('static', filename='uploads/' + about_info.image_filename) }}" 
+                                 alt="{{ about_info.name }}" class="rounded-circle img-thumbnail" style="width: 150px; height: 150px; object-fit: cover;">
+                        {% else %}
+                            <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" style="width: 150px; height: 150px; margin: 0 auto;">
+                                <i class="fas fa-user fa-3x text-muted"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <h4 class="text-center mb-3">{{ about_info.name }}</h4>
+                    
+                    {% if about_info.email %}
+                        <p class="text-center mb-3">
+                            <i class="fas fa-envelope me-2"></i>{{ about_info.email }}
+                        </p>
+                    {% endif %}
+                    
+                    {% if about_info.bio %}
+                        <p class="mb-3">{{ about_info.bio }}</p>
+                    {% endif %}
+                    
+                    <div class="text-center">
+                        {% if about_info.website_url %}
+                            <a href="{{ about_info.website_url }}" target="_blank" class="btn btn-outline-primary btn-sm me-2 mb-2">
+                                <i class="fas fa-globe me-1"></i>Website
+                            </a>
+                        {% endif %}
+                        {% if about_info.github_url %}
+                            <a href="{{ about_info.github_url }}" target="_blank" class="btn btn-outline-primary btn-sm me-2 mb-2">
+                                <i class="fab fa-github me-1"></i>GitHub
+                            </a>
+                        {% endif %}
+                        {% if about_info.linkedin_url %}
+                            <a href="{{ about_info.linkedin_url }}" target="_blank" class="btn btn-outline-primary btn-sm me-2 mb-2">
+                                <i class="fab fa-linkedin me-1"></i>LinkedIn
+                            </a>
+                        {% endif %}
+                        {% if about_info.twitter_url %}
+                            <a href="{{ about_info.twitter_url }}" target="_blank" class="btn btn-outline-primary btn-sm me-2 mb-2">
+                                <i class="fab fa-twitter me-1"></i>Twitter
+                            </a>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center">
+                        <i class="fas fa-info-circle me-2"></i>
+                        No about information available. Fill out the form to get started.
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-body">
+                <h6 class="card-title">
+                    <i class="fas fa-lightbulb me-2"></i>Tips
+                </h6>
+                <ul class="small mb-0">
+                    <li>Upload a square image for best results</li>
+                    <li>Keep your bio concise and engaging</li>
+                    <li>Include relevant social links to connect with visitors</li>
+                    <li>Use a professional email address</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

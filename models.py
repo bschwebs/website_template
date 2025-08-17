@@ -95,6 +95,20 @@ def init_db():
                 message TEXT NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
+            
+            CREATE TABLE IF NOT EXISTS about_info (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                email TEXT,
+                bio TEXT,
+                image_filename TEXT,
+                website_url TEXT,
+                github_url TEXT,
+                linkedin_url TEXT,
+                twitter_url TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
         ''')
         
         # Create default admin user if none exists
@@ -644,4 +658,49 @@ class ContactModel:
         """Delete a contact message."""
         db = get_db()
         db.execute('DELETE FROM contact_messages WHERE id = ?', (message_id,))
+        db.commit()
+
+
+class AboutModel:
+    """Model for handling about page information."""
+    
+    @staticmethod
+    def get_about_info():
+        """Get about information."""
+        db = get_db()
+        return db.execute('SELECT * FROM about_info ORDER BY id DESC LIMIT 1').fetchone()
+    
+    @staticmethod
+    def save_about_info(name, email, bio, image_filename, website_url, github_url, linkedin_url, twitter_url):
+        """Save or update about information."""
+        db = get_db()
+        # Delete existing info first (only one record allowed)
+        db.execute('DELETE FROM about_info')
+        # Insert new info
+        db.execute('''
+            INSERT INTO about_info (name, email, bio, image_filename, website_url, github_url, linkedin_url, twitter_url)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (name, email, bio, image_filename, website_url, github_url, linkedin_url, twitter_url))
+        db.commit()
+    
+    @staticmethod
+    def update_about_info(name, email, bio, image_filename, website_url, github_url, linkedin_url, twitter_url):
+        """Update existing about information."""
+        db = get_db()
+        existing = db.execute('SELECT * FROM about_info LIMIT 1').fetchone()
+        
+        if existing:
+            db.execute('''
+                UPDATE about_info 
+                SET name = ?, email = ?, bio = ?, image_filename = ?, 
+                    website_url = ?, github_url = ?, linkedin_url = ?, twitter_url = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            ''', (name, email, bio, image_filename, website_url, github_url, linkedin_url, twitter_url, existing['id']))
+        else:
+            db.execute('''
+                INSERT INTO about_info (name, email, bio, image_filename, website_url, github_url, linkedin_url, twitter_url)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (name, email, bio, image_filename, website_url, github_url, linkedin_url, twitter_url))
+        
         db.commit()

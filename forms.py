@@ -3,7 +3,7 @@ Flask-WTF forms for the Story Hub application.
 """
 from flask_wtf import FlaskForm
 from wtforms import StringField, TextAreaField, SelectField, SubmitField, FileField, PasswordField, ValidationError
-from wtforms.validators import DataRequired, Length, Email
+from wtforms.validators import DataRequired, Length, Email, Optional, URL
 
 
 class PostForm(FlaskForm):
@@ -79,3 +79,16 @@ class ChangePasswordForm(FlaskForm):
     def validate_confirm_password(self, field):
         if field.data != self.new_password.data:
             raise ValidationError('Passwords must match.')
+
+
+class AboutForm(FlaskForm):
+    """Form for managing about page information."""
+    name = StringField('Name', validators=[DataRequired(), Length(min=2, max=100)])
+    email = StringField('Email', validators=[Optional(), Email(), Length(max=100)])
+    bio = TextAreaField('Bio', validators=[Optional(), Length(max=2000)])
+    image = FileField('Profile Image')
+    website_url = StringField('Website URL', validators=[Optional(), URL(), Length(max=200)])
+    github_url = StringField('GitHub URL', validators=[Optional(), URL(), Length(max=200)])
+    linkedin_url = StringField('LinkedIn URL', validators=[Optional(), URL(), Length(max=200)])
+    twitter_url = StringField('Twitter URL', validators=[Optional(), URL(), Length(max=200)])
+    submit = SubmitField('Save About Info')

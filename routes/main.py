@@ -2,7 +2,7 @@
 Main routes for the Story Hub application.
 """
 from flask import Blueprint, render_template, request, flash, redirect, url_for
-from models import PostModel, TagModel, CategoryModel, ContactModel, EmailConfigModel
+from models import PostModel, TagModel, CategoryModel, ContactModel, EmailConfigModel, AboutModel
 from utils import is_admin_logged_in
 from forms import ContactForm
 import smtplib
@@ -200,6 +200,13 @@ def contact():
             flash('Sorry, there was an error sending your message. Please try again.', 'error')
     
     return render_template('contact.html', form=form)
+
+
+@main.route('/about')
+def about():
+    """About page."""
+    about_info = AboutModel.get_about_info()
+    return render_template('about.html', about_info=about_info)
 
 
 def send_contact_email(config, name, email, subject, message):

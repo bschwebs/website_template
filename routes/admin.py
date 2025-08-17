@@ -2,9 +2,9 @@
 Admin routes for the Story Hub application.
 """
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
-from models import PostModel, AdminModel, TagModel, CategoryModel, EmailConfigModel, ContactModel
-from forms import DeleteForm, CategoryForm, DeleteCategoryForm, ChangePasswordForm
-from utils import admin_required, delete_file
+from models import PostModel, AdminModel, TagModel, CategoryModel, EmailConfigModel, ContactModel, AboutModel
+from forms import DeleteForm, CategoryForm, DeleteCategoryForm, ChangePasswordForm, AboutForm
+from utils import admin_required, delete_file, save_uploaded_file
 
 admin = Blueprint('admin', __name__)
 
@@ -264,3 +264,54 @@ def admin_change_password():
             flash('Current password is incorrect.', 'error')
     
     return render_template('admin/change_password.html', form=form)
+
+
+@admin.route('/admin/about', methods=['GET', 'POST'])
+@admin_required
+def admin_about():
+    """Manage about page information."""
+    form = AboutForm()
+    
+    if form.validate_on_submit():
+        # Handle file upload
+        image_filename = None
+        if form.image.data and form.image.data.filename:
+            try:
+                image_filename = save_uploaded_file(form.image.data, 'static/uploads')
+            except Exception as e:
+                flash('Error uploading image. Please try again.', 'error')
+                return render_template('admin/about.html', form=form, about_info=AboutModel.get_about_info())
+        else:
+            # Keep existing image if no new image uploaded
+            existing_info = AboutModel.get_about_info()
+            if existing_info:
+                image_filename = existing_info['image_filename']
+        
+        try:
+            AboutModel.update_about_info(
+                name=form.name.data,
+                email=form.email.data,
+                bio=form.bio.data,
+                image_filename=image_filename,
+                website_url=form.website_url.data,
+                github_url=form.github_url.data,
+                linkedin_url=form.linkedin_url.data,
+                twitter_url=form.twitter_url.data
+            )
+            flash('About information updated successfully!', 'success')
+            return redirect(url_for('admin.admin_about'))
+        except Exception as e:
+            flash('Error saving about information.', 'error')
+    
+    # Pre-populate form with existing data
+    about_info = AboutModel.get_about_info()
+    if about_info and request.method == 'GET':
+        form.name.data = about_info['name']
+        form.email.data = about_info['email']
+        form.bio.data = about_info['bio']
+        form.website_url.data = about_info['website_url']
+        form.github_url.data = about_info['github_url']
+        form.linkedin_url.data = about_info['linkedin_url']
+        form.twitter_url.data = about_info['twitter_url']
+    
+    return render_template('admin/about.html', form=form, about_info=about_info)

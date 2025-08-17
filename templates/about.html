@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}About{% if about_info %} - {{ about_info.name }}{% endif %} | Japan's History{% endblock %}
+
+{% block meta_description %}Learn more about the author behind Japan's History blog{% if about_info %} - {{ about_info.name }}{% endif %}.{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    {% if about_info %}
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-body p-5">
+                        <div class="row">
+                            <div class="col-md-4 text-center mb-4 mb-md-0">
+                                {% if about_info.image_filename %}
+                                    <img src="{{ url_for('static', filename='uploads/' + about_info.image_filename) }}" 
+                                         alt="{{ about_info.name }}" 
+                                         class="rounded-circle img-fluid shadow-sm" 
+                                         style="width: 200px; height: 200px; object-fit: cover;">
+                                {% else %}
+                                    <div class="bg-light rounded-circle d-flex align-items-center justify-content-center shadow-sm" 
+                                         style="width: 200px; height: 200px; margin: 0 auto;">
+                                        <i class="fas fa-user fa-4x text-muted"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-8">
+                                <h1 class="mb-3">{{ about_info.name }}</h1>
+                                
+                                {% if about_info.email %}
+                                    <p class="mb-3">
+                                        <i class="fas fa-envelope me-2 text-muted"></i>
+                                        <a href="mailto:{{ about_info.email }}" class="text-decoration-none">
+                                            {{ about_info.email }}
+                                        </a>
+                                    </p>
+                                {% endif %}
+                                
+                                {% if about_info.bio %}
+                                    <div class="mb-4">
+                                        <h5 class="mb-3">About Me</h5>
+                                        <p class="lead">{{ about_info.bio }}</p>
+                                    </div>
+                                {% endif %}
+                                
+                                <!-- Social Links -->
+                                {% if about_info.website_url or about_info.github_url or about_info.linkedin_url or about_info.twitter_url %}
+                                    <div class="mb-3">
+                                        <h6 class="mb-3">Connect With Me</h6>
+                                        <div class="d-flex flex-wrap gap-2">
+                                            {% if about_info.website_url %}
+                                                <a href="{{ about_info.website_url }}" target="_blank" rel="noopener noreferrer" 
+                                                   class="btn btn-outline-primary social-share-btn" data-platform="website">
+                                                    <i class="fas fa-globe me-2"></i>Website
+                                                </a>
+                                            {% endif %}
+                                            {% if about_info.github_url %}
+                                                <a href="{{ about_info.github_url }}" target="_blank" rel="noopener noreferrer" 
+                                                   class="btn btn-outline-primary social-share-btn" data-platform="github">
+                                                    <i class="fab fa-github me-2"></i>GitHub
+                                                </a>
+                                            {% endif %}
+                                            {% if about_info.linkedin_url %}
+                                                <a href="{{ about_info.linkedin_url }}" target="_blank" rel="noopener noreferrer" 
+                                                   class="btn btn-outline-primary social-share-btn" data-platform="linkedin">
+                                                    <i class="fab fa-linkedin me-2"></i>LinkedIn
+                                                </a>
+                                            {% endif %}
+                                            {% if about_info.twitter_url %}
+                                                <a href="{{ about_info.twitter_url }}" target="_blank" rel="noopener noreferrer" 
+                                                   class="btn btn-outline-primary social-share-btn" data-platform="twitter">
+                                                    <i class="fab fa-twitter me-2"></i>Twitter
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Call to Action -->
+                <div class="text-center mt-5">
+                    <h4 class="mb-3">Explore Japan's Rich History</h4>
+                    <p class="mb-4">Discover fascinating stories and insights about Japanese culture, traditions, and historical events.</p>
+                    <div class="d-flex justify-content-center gap-3 flex-wrap">
+                        <a href="{{ url_for('main.articles') }}" class="btn btn-primary">
+                            <i class="fas fa-newspaper me-2"></i>Read Articles
+                        </a>
+                        <a href="{{ url_for('main.stories') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-book me-2"></i>Browse Stories
+                        </a>
+                        <a href="{{ url_for('main.contact') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-envelope me-2"></i>Get in Touch
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <!-- No about information available -->
+        <div class="row justify-content-center">
+            <div class="col-lg-6 text-center">
+                <div class="card">
+                    <div class="card-body p-5">
+                        <i class="fas fa-user-circle fa-5x text-muted mb-4"></i>
+                        <h2 class="mb-3">About Page</h2>
+                        <p class="lead text-muted mb-4">
+                            The about information is currently being updated. Please check back soon to learn more about the author.
+                        </p>
+                        <div class="d-flex justify-content-center gap-3 flex-wrap">
+                            <a href="{{ url_for('main.index') }}" class="btn btn-primary">
+                                <i class="fas fa-home me-2"></i>Return Home
+                            </a>
+                            <a href="{{ url_for('main.contact') }}" class="btn btn-outline-primary">
+                                <i class="fas fa-envelope me-2"></i>Contact Us
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
