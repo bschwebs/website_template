@@ -2,7 +2,7 @@
 Flask-WTF forms for the Story Hub application.
 """
 from flask_wtf import FlaskForm
-from wtforms import StringField, TextAreaField, SelectField, SubmitField, FileField, PasswordField
+from wtforms import StringField, TextAreaField, SelectField, SubmitField, FileField, PasswordField, ValidationError
 from wtforms.validators import DataRequired, Length, Email
 
 
@@ -67,3 +67,15 @@ class ContactForm(FlaskForm):
     subject = StringField('Subject', validators=[DataRequired(), Length(min=2, max=200)])
     message = TextAreaField('Message', validators=[DataRequired(), Length(min=10, max=2000)])
     submit = SubmitField('Send Message')
+
+
+class ChangePasswordForm(FlaskForm):
+    """Form for changing admin password."""
+    current_password = PasswordField('Current Password', validators=[DataRequired()])
+    new_password = PasswordField('New Password', validators=[DataRequired(), Length(min=6, max=100)])
+    confirm_password = PasswordField('Confirm New Password', validators=[DataRequired(), Length(min=6, max=100)])
+    submit = SubmitField('Change Password')
+    
+    def validate_confirm_password(self, field):
+        if field.data != self.new_password.data:
+            raise ValidationError('Passwords must match.')

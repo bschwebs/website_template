@@ -1,9 +1,9 @@
 """
 Admin routes for the Story Hub application.
 """
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from models import PostModel, AdminModel, TagModel, CategoryModel, EmailConfigModel, ContactModel
-from forms import DeleteForm, CategoryForm, DeleteCategoryForm
+from forms import DeleteForm, CategoryForm, DeleteCategoryForm, ChangePasswordForm
 from utils import admin_required, delete_file
 
 admin = Blueprint('admin', __name__)
@@ -243,3 +243,24 @@ def admin_delete_contact_message(message_id):
             flash('Error deleting contact message.', 'error')
     
     return redirect(url_for('admin.admin_contact_messages'))
+
+
+@admin.route('/admin/change-password', methods=['GET', 'POST'])
+@admin_required
+def admin_change_password():
+    """Change admin password."""
+    form = ChangePasswordForm()
+    
+    if form.validate_on_submit():
+        current_username = session.get('admin_username')
+        
+        # Verify current password
+        if AdminModel.verify_password(current_username, form.current_password.data):
+            # Update password
+            AdminModel.update_password(current_username, form.new_password.data)
+            flash('Password changed successfully!', 'success')
+            return redirect(url_for('admin.admin_dashboard'))
+        else:
+            flash('Current password is incorrect.', 'error')
+    
+    return render_template('admin/change_password.html', form=form)

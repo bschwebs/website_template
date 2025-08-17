@@ -74,6 +74,16 @@ def create_post():
         # Get category (only for articles)
         category_id = form.category_id.data if post_type == 'article' and form.category_id.data else None
         
+        # Check if trying to add to introduction category
+        if category_id:
+            category = CategoryModel.get_category_by_id(category_id)
+            if category and category['slug'] == 'introduction':
+                # Check if there's already a post in introduction category
+                existing_intro = PostModel.get_introduction_post()
+                if existing_intro:
+                    flash('The Introduction category can only contain one post. Please edit the existing introduction post instead.', 'error')
+                    return render_template('create.html', form=form)
+        
         # Create the post
         PostModel.create_post(title, content, excerpt, image_filename, post_type, slug, image_position_x, image_position_y, category_id)
         
@@ -145,6 +155,16 @@ def edit_post(post_id):
         
         # Get category (only for articles)
         category_id = form.category_id.data if post_type == 'article' and form.category_id.data else None
+        
+        # Check if trying to move to introduction category
+        if category_id:
+            category = CategoryModel.get_category_by_id(category_id)
+            if category and category['slug'] == 'introduction':
+                # Check if there's already a different post in introduction category
+                existing_intro = PostModel.get_introduction_post()
+                if existing_intro and existing_intro['id'] != post_id:
+                    flash('The Introduction category can only contain one post. Please edit the existing introduction post instead.', 'error')
+                    return render_template('edit.html', form=form, post=post)
         
         # Update the post
         PostModel.update_post(post_id, title, content, excerpt, image_filename, post_type, slug, image_position_x, image_position_y, category_id)

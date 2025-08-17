@@ -205,6 +205,17 @@ class PostModel:
         ''').fetchone()
     
     @staticmethod
+    def get_introduction_post():
+        """Get the introduction post from the introduction category."""
+        db = get_db()
+        return db.execute('''
+            SELECT p.* FROM posts p
+            JOIN categories c ON p.category_id = c.id
+            WHERE c.slug = 'introduction' AND p.post_type = 'article'
+            LIMIT 1
+        ''').fetchone()
+    
+    @staticmethod
     def get_non_featured_posts(limit=9):
         """Get non-featured posts."""
         db = get_db()
@@ -560,6 +571,30 @@ class AdminModel:
             'total_stories': len([p for p in posts if p['post_type'] == 'story']),
             'total_articles': len([p for p in posts if p['post_type'] == 'article'])
         }
+    
+    @staticmethod
+    def verify_password(username, password):
+        """Verify admin password."""
+        from werkzeug.security import check_password_hash
+        db = get_db()
+        admin = db.execute('SELECT * FROM admin_users WHERE username = ?', (username,)).fetchone()
+        if admin:
+            return check_password_hash(admin['password_hash'], password)
+        return False
+    
+    @staticmethod
+    def update_password(username, new_password):
+        """Update admin password."""
+        from werkzeug.security import generate_password_hash
+        db = get_db()
+        
+        # Hash the new password using Werkzeug's secure hashing
+        password_hash = generate_password_hash(new_password)
+        
+        # Update the password
+        db.execute('UPDATE admin_users SET password_hash = ? WHERE username = ?', 
+                  (password_hash, username))
+        db.commit()
 
 
 class EmailConfigModel:

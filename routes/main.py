@@ -22,6 +22,9 @@ def index():
     # Get featured post
     featured_post = PostModel.get_featured_post()
     
+    # Get introduction post
+    introduction_post = PostModel.get_introduction_post()
+    
     # Get total count of non-featured posts
     if featured_post:
         total_posts = PostModel.count_non_featured_posts()
@@ -43,6 +46,7 @@ def index():
     return render_template('index.html', 
                          posts=posts, 
                          featured_post=featured_post,
+                         introduction_post=introduction_post,
                          page=page,
                          total_pages=total_pages,
                          has_prev=has_prev,
@@ -241,7 +245,11 @@ def inject_template_vars():
     all_categories = CategoryModel.get_all_categories()
     categories_with_articles = [cat for cat in all_categories if cat['post_count'] > 0]
     
+    # Get introduction post for navbar
+    introduction_post = PostModel.get_introduction_post()
+    
     return {
         'is_admin_logged_in': is_admin_logged_in(),
-        'categories': categories_with_articles
+        'categories': categories_with_articles,
+        'navbar_introduction_post': introduction_post
     }

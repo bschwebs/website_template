@@ -22,12 +22,13 @@ A modern, feature-rich blog application built with Flask, featuring comprehensiv
 - **Search Pagination**: Efficient pagination for search results
 
 ### Admin Features
-- **Secure Authentication**: Session-based admin login system
+- **Secure Authentication**: Session-based admin login system with password change capability
 - **Admin Dashboard**: Overview of post statistics and recent activity
 - **Post Management**: Create, edit, delete, and feature posts
 - **Category Management**: Create and manage article categories
 - **Tag Management**: Organize and clean up tag system
 - **Contact System**: Email configuration and message management
+- **Password Management**: Secure admin password change facility
 - **Featured Posts**: Highlight important content with prominent display
 - **Bulk Operations**: Manage multiple posts efficiently
 
@@ -328,6 +329,7 @@ pytest tests/
 
 ### Manual Testing Checklist
 - [ ] Admin login/logout functionality
+- [ ] Admin password change feature
 - [ ] Post creation with tags and images
 - [ ] Category management and article categorization
 - [ ] Contact form submission and email sending
@@ -348,7 +350,7 @@ pytest tests/
 - **Admin Authentication**: Session-based authentication
 
 ### Recommended Security Enhancements
-1. **Change Default Admin Credentials**: Update the default admin password
+1. **Change Default Admin Credentials**: Use the admin password change feature at `/admin/change-password`
 2. **Use HTTPS**: Enable SSL/TLS in production
 3. **Environment Variables**: Store secrets in environment variables
 4. **Database Security**: Use proper database permissions

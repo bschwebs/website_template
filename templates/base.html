@@ -123,6 +123,44 @@
             transform: translateY(-5px);
         }
         
+        /* Dark overlay fade effect on hover */
+        .post-card .bg-dark {
+            transition: opacity 0.3s ease-in-out;
+        }
+        .post-card:hover .bg-dark {
+            opacity: 0.1 !important;
+        }
+        
+        /* Jumbotron hover effect */
+        .jumbotron-hover {
+            transition: transform 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .jumbotron-hover:hover {
+            transform: translateY(-3px);
+        }
+        .jumbotron-overlay {
+            transition: opacity 0.3s ease-in-out;
+        }
+        .jumbotron-hover:hover .jumbotron-overlay {
+            opacity: 0.3 !important;
+        }
+        
+        /* Featured post hover effect */
+        .featured-post-hover {
+            transition: transform 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .featured-post-hover:hover {
+            transform: translateY(-5px);
+        }
+        .featured-overlay {
+            transition: opacity 0.3s ease-in-out;
+        }
+        .featured-post-hover:hover .featured-overlay {
+            opacity: 0.2 !important;
+        }
+        
         /* Rounded corners for post grid outer edges */
         .post-card {
             border-radius: 0 !important;
@@ -431,9 +469,16 @@
                         </a>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="{{ url_for('main.articles') }}">All Articles</a></li>
+                            {% if navbar_introduction_post %}
+                            <li><a class="dropdown-item" href="{{ url_for('posts.view_post_by_slug', slug=navbar_introduction_post.slug) if navbar_introduction_post.slug else url_for('posts.view_post', post_id=navbar_introduction_post.id) }}">
+                                <img src="{{ url_for('static', filename='img/Japanese History Blog Logo - Styled.png') }}" alt="Japan's History Logo" class="me-2" style="height: 16px; width: 16px;">Introduction
+                            </a></li>
+                            {% endif %}
                             <li><hr class="dropdown-divider"></li>
                             {% for category in categories %}
+                            {% if category.slug != 'introduction' %}
                             <li><a class="dropdown-item" href="{{ url_for('main.articles_by_category', category_slug=category.slug) }}">{{ category.name }}</a></li>
+                            {% endif %}
                             {% endfor %}
                         </ul>
                     </li>
@@ -480,6 +525,9 @@
                                 <i class="fas fa-envelope-open-text me-2"></i>Email Config</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('admin.admin_contact_messages') }}">
                                 <i class="fas fa-inbox me-2"></i>Contact Messages</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin.admin_change_password') }}">
+                                <i class="fas fa-lock me-2"></i>Change Password</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{{ url_for('auth.admin_logout') }}">
                                 <i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
