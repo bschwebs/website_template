@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Images | Admin{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="d-flex align-items-center" style="font-size: 2rem;">
+        <img src="{{ url_for('static', filename='img/Japanese History Blog Logo - Styled.png') }}" alt="Japan's History Logo" class="me-2" style="height: 48px; width: 48px;">
+        Upload Images
+    </h1>
+    <a href="{{ url_for('admin.admin_gallery') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-1"></i>Back to Gallery
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-upload me-2"></i>Select Images to Upload
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data" id="uploadForm">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-4">
+                        {{ form.images.label(class="form-label") }}
+                        {{ form.images(class="form-control", multiple=True, accept="image/*") }}
+                        {% if form.images.errors %}
+                            <div class="text-danger small">
+                                {% for error in form.images.errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            Select multiple images to upload. Supported formats: PNG, JPG, JPEG, GIF, WebP
+                        </div>
+                    </div>
+                    
+                    <!-- Preview Area -->
+                    <div id="previewArea" class="mb-4" style="display: none;">
+                        <h6>Selected Images:</h6>
+                        <div id="previewContainer" class="row g-3"></div>
+                    </div>
+                    
+                    <!-- Progress Bar -->
+                    <div id="uploadProgress" class="mb-3" style="display: none;">
+                        <div class="progress">
+                            <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <small class="text-muted mt-1" id="progressText">Preparing upload...</small>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('admin.admin_gallery') }}" class="btn btn-secondary">
+                            <i class="fas fa-times me-1"></i>Cancel
+                        </a>
+                        {{ form.submit(class="btn btn-primary", id="uploadBtn") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Upload Guidelines
+                </h5>
+            </div>
+            <div class="card-body">
+                <h6>Supported Formats</h6>
+                <ul class="small">
+                    <li>PNG (.png)</li>
+                    <li>JPEG (.jpg, .jpeg)</li>
+                    <li>GIF (.gif)</li>
+                    <li>WebP (.webp)</li>
+                </ul>
+                
+                <h6 class="mt-3">Best Practices</h6>
+                <ul class="small">
+                    <li>Use descriptive file names</li>
+                    <li>Optimize images before upload</li>
+                    <li>Consider file size for web performance</li>
+                    <li>Use appropriate dimensions</li>
+                </ul>
+                
+                <h6 class="mt-3">After Upload</h6>
+                <ul class="small">
+                    <li>Add alt text for accessibility</li>
+                    <li>Write descriptive captions</li>
+                    <li>Organize your gallery regularly</li>
+                    <li>Remove unused images</li>
+                </ul>
+                
+                <div class="alert alert-warning mt-3">
+                    <small><i class="fas fa-exclamation-triangle me-1"></i>
+                    Large images may take longer to upload. Please be patient and don't close the browser.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('images');
+    const previewArea = document.getElementById('previewArea');
+    const previewContainer = document.getElementById('previewContainer');
+    const uploadForm = document.getElementById('uploadForm');
+    const uploadProgress = document.getElementById('uploadProgress');
+    const progressBar = uploadProgress.querySelector('.progress-bar');
+    const progressText = document.getElementById('progressText');
+    const uploadBtn = document.getElementById('uploadBtn');
+    
+    // File preview functionality
+    fileInput.addEventListener('change', function(e) {
+        const files = e.target.files;
+        previewContainer.innerHTML = '';
+        
+        if (files.length > 0) {
+            previewArea.style.display = 'block';
+            
+            Array.from(files).forEach((file, index) => {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const col = document.createElement('div');
+                        col.className = 'col-6 col-md-4 col-lg-3';
+                        col.innerHTML = `
+                            <div class="card">
+                                <img src="${e.target.result}" class="card-img-top" style="height: 100px; object-fit: cover;">
+                                <div class="card-body p-2">
+                                    <small class="text-truncate d-block">${file.name}</small>
+                                    <small class="text-muted">${(file.size / 1024).toFixed(1)} KB</small>
+                                </div>
+                            </div>
+                        `;
+                        previewContainer.appendChild(col);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        } else {
+            previewArea.style.display = 'none';
+        }
+    });
+    
+    // Enhanced upload with progress
+    uploadForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(uploadForm);
+        const files = fileInput.files;
+        
+        if (files.length === 0) {
+            alert('Please select at least one image to upload.');
+            return;
+        }
+        
+        // Show progress
+        uploadProgress.style.display = 'block';
+        uploadBtn.disabled = true;
+        uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Uploading...';
+        
+        // Use XMLHttpRequest for progress tracking
+        const xhr = new XMLHttpRequest();
+        
+        xhr.upload.addEventListener('progress', function(e) {
+            if (e.lengthComputable) {
+                const percentComplete = (e.loaded / e.total) * 100;
+                progressBar.style.width = percentComplete + '%';
+                progressText.textContent = `Uploading... ${Math.round(percentComplete)}%`;
+            }
+        });
+        
+        xhr.addEventListener('load', function() {
+            if (xhr.status === 200) {
+                progressText.textContent = 'Upload complete! Redirecting...';
+                setTimeout(() => {
+                    window.location.href = "{{ url_for('admin.admin_gallery') }}";
+                }, 1000);
+            } else {
+                alert('Upload failed. Please try again.');
+                uploadBtn.disabled = false;
+                uploadBtn.innerHTML = '<i class="fas fa-upload me-1"></i>Upload Images';
+                uploadProgress.style.display = 'none';
+            }
+        });
+        
+        xhr.addEventListener('error', function() {
+            alert('Upload failed. Please check your connection and try again.');
+            uploadBtn.disabled = false;
+            uploadBtn.innerHTML = '<i class="fas fa-upload me-1"></i>Upload Images';
+            uploadProgress.style.display = 'none';
+        });
+        
+        xhr.open('POST', uploadForm.action);
+        xhr.send(formData);
+    });
+});
+</script>
+{% endblock %}

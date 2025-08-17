@@ -3,7 +3,7 @@ Authentication routes for the Story Hub application.
 """
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from werkzeug.security import check_password_hash
-from models import AdminModel
+from models import AdminModel, ActivityLogModel
 from forms import LoginForm
 
 auth = Blueprint('auth', __name__)
@@ -19,6 +19,15 @@ def admin_login():
         if admin and check_password_hash(admin['password_hash'], form.password.data):
             session['admin_logged_in'] = True
             session['admin_username'] = admin['username']
+            
+            # Log successful login
+            ActivityLogModel.log_activity(
+                admin_username=admin['username'],
+                action='Admin Login',
+                details='Successful login to admin panel',
+                ip_address=request.remote_addr
+            )
+            
             flash('Successfully logged in as admin.', 'success')
             return redirect(url_for('admin.admin_dashboard'))
         else:
@@ -30,6 +39,15 @@ def admin_login():
 @auth.route('/admin/logout')
 def admin_logout():
     """Admin logout."""
+    # Log logout before clearing session
+    admin_username = session.get('admin_username', 'unknown')
+    ActivityLogModel.log_activity(
+        admin_username=admin_username,
+        action='Admin Logout',
+        details='Logged out from admin panel',
+        ip_address=request.remote_addr
+    )
+    
     session.pop('admin_logged_in', None)
     session.pop('admin_username', None)
     flash('You have been logged out.', 'info')

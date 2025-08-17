@@ -116,9 +116,6 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('main.stories') }}">Stories</a>
-                    </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="{{ url_for('main.articles') }}" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             Articles
@@ -139,20 +136,21 @@
                             {% endfor %}
                         </ul>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('search.all_tags') }}">
-                            <i class="fas fa-tags me-1"></i>Tags
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-ellipsis-h me-1"></i>More
                         </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('main.about') }}">
-                            <i class="fas fa-user me-1"></i>About
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('main.contact') }}">
-                            <i class="fas fa-envelope me-1"></i>Contact
-                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('search.all_tags') }}">
+                                <i class="fas fa-tags me-2"></i>Tags
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.about') }}">
+                                <i class="fas fa-user me-2"></i>About
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.contact') }}">
+                                <i class="fas fa-envelope me-2"></i>Contact
+                            </a></li>
+                        </ul>
                     </li>
                 </ul>
                 
@@ -182,6 +180,14 @@
                                 <i class="fas fa-folder me-2"></i>Manage Categories</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('admin.admin_tags') }}">
                                 <i class="fas fa-tags me-2"></i>Manage Tags</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin.admin_templates') }}">
+                                <i class="fas fa-file-code me-2"></i>Post Templates</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin.admin_gallery') }}">
+                                <i class="fas fa-images me-2"></i>Image Gallery</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin.admin_backup') }}">
+                                <i class="fas fa-download me-2"></i>Backup & Export</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin.admin_activity_log') }}">
+                                <i class="fas fa-history me-2"></i>Activity Log</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{{ url_for('admin.admin_email_config') }}">
                                 <i class="fas fa-envelope-open-text me-2"></i>Email Config</a></li>
@@ -249,7 +255,193 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
+    <!-- Quill.js for rich text editing -->
+    <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+    
+    <!-- Custom Quill Editor Styling -->
+    <style>
+        /* Quill Editor Styling for Better Visibility */
+        .quill-editor .ql-editor {
+            background-color: #ffffff !important;
+            color: #212529 !important;
+            border: 1px solid #dee2e6 !important;
+            border-radius: 0.375rem;
+            min-height: 300px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .quill-editor .ql-toolbar {
+            background-color: #f8f9fa !important;
+            border: 1px solid #dee2e6 !important;
+            border-bottom: none !important;
+            border-radius: 0.375rem 0.375rem 0 0;
+        }
+        
+        .quill-editor .ql-container {
+            border-radius: 0 0 0.375rem 0.375rem;
+        }
+        
+        /* Form styling for better readability */
+        .card-body.bg-light {
+            color: #212529 !important;
+        }
+        
+        .card-body.bg-light .form-label {
+            color: #495057 !important;
+            font-weight: 600;
+        }
+        
+        .card-body.bg-light .form-text {
+            color: #6c757d !important;
+        }
+        
+        .card-body.bg-light .form-control {
+            background-color: #ffffff !important;
+            border: 1px solid #ced4da !important;
+            color: #495057 !important;
+        }
+        
+        .card-body.bg-light .form-select {
+            background-color: #ffffff !important;
+            border: 1px solid #ced4da !important;
+            color: #495057 !important;
+        }
+        
+        /* Publishing options card styling */
+        .card-body.bg-light .card {
+            background-color: #ffffff !important;
+            border: 1px solid #dee2e6 !important;
+        }
+        
+        .card-body.bg-light .card-header {
+            background-color: #e9ecef !important;
+            color: #495057 !important;
+        }
+        
+        .card-body.bg-light .form-check-label {
+            color: #495057 !important;
+        }
+        
+        /* Responsive images in Quill editor and content display */
+        .quill-editor .ql-editor img,
+        .post-content img,
+        .content img {
+            max-width: 100% !important;
+            height: auto !important;
+            display: block;
+            margin: 10px auto;
+            border-radius: 4px;
+        }
+        
+        /* Ensure images in post content are also responsive */
+        .card-text img,
+        article img {
+            max-width: 100% !important;
+            height: auto !important;
+            display: block;
+            margin: 10px auto;
+            border-radius: 4px;
+        }
+    </style>
+    
     <!-- Custom JavaScript -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    
+    <!-- Quill Editor Integration -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const contentTextarea = document.querySelector('textarea[name="content"]');
+            if (contentTextarea) {
+                // Hide the textarea and create Quill editor
+                contentTextarea.style.display = 'none';
+                
+                // Create Quill container
+                const quillContainer = document.createElement('div');
+                quillContainer.style.minHeight = '300px';
+                quillContainer.style.backgroundColor = '#ffffff';
+                quillContainer.style.border = '1px solid #dee2e6';
+                quillContainer.style.borderRadius = '0.375rem';
+                contentTextarea.parentNode.insertBefore(quillContainer, contentTextarea);
+                
+                // Initialize Quill
+                const quill = new Quill(quillContainer, {
+                    theme: 'snow',
+                    placeholder: 'Write your content here...',
+                    modules: {
+                        toolbar: [
+                            [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                            ['bold', 'italic', 'underline', 'strike'],
+                            [{ 'color': [] }, { 'background': [] }],
+                            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                            [{ 'indent': '-1'}, { 'indent': '+1' }],
+                            [{ 'align': [] }],
+                            ['link', 'image', 'video'],
+                            ['blockquote', 'code-block'],
+                            ['clean']
+                        ]
+                    }
+                });
+                
+                // Load initial content
+                if (contentTextarea.value) {
+                    quill.root.innerHTML = contentTextarea.value;
+                }
+                
+                // Sync content on changes
+                quill.on('text-change', function() {
+                    contentTextarea.value = quill.root.innerHTML;
+                });
+                
+                // Sync before form submission
+                const form = contentTextarea.closest('form');
+                if (form) {
+                    form.addEventListener('submit', function() {
+                        contentTextarea.value = quill.root.innerHTML;
+                    });
+                }
+                
+                // Handle image uploads
+                quill.getModule('toolbar').addHandler('image', function() {
+                    const input = document.createElement('input');
+                    input.setAttribute('type', 'file');
+                    input.setAttribute('accept', 'image/*');
+                    input.click();
+                    
+                    input.onchange = function() {
+                        const file = input.files[0];
+                        if (file) {
+                            const formData = new FormData();
+                            formData.append('file', file);
+                            
+                            const csrfToken = document.querySelector('input[name="csrf_token"]')?.value;
+                            if (csrfToken) {
+                                formData.append('csrf_token', csrfToken);
+                            }
+                            
+                            fetch('{{ url_for("admin.upload_image_ajax") }}', {
+                                method: 'POST',
+                                body: formData
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.location) {
+                                    const range = quill.getSelection(true);
+                                    quill.insertEmbed(range.index, 'image', data.location);
+                                } else {
+                                    alert('Failed to upload image');
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error uploading image:', error);
+                                alert('Error uploading image');
+                            });
+                        }
+                    };
+                });
+            }
+        });
+    </script>
 </body>
 </html>

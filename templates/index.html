@@ -2,9 +2,9 @@
 
 {% block title %}Japan's History{% endblock %}
 
-{% block meta_description %}Discover amazing stories and insightful articles from our community of writers.{% endblock %}
+{% block meta_description %}Discover insightful articles about Japanese history and culture from our community of writers.{% endblock %}
 
-{% block meta_keywords %}story hub, blog, stories, articles, technology, lifestyle, travel, writing, creative content{% endblock %}
+{% block meta_keywords %}Japan history, blog, articles, Japanese culture, samurai, technology, lifestyle, travel, writing{% endblock %}
 
 <!-- Structured Data for Homepage -->
 {% block structured_data %}
@@ -19,7 +19,7 @@
                 <div class="position-absolute w-100 h-100 jumbotron-overlay" style="background: linear-gradient(to bottom, rgba(45, 24, 16, 0.3) 0%, rgba(45, 24, 16, 0.8) 100%); top: 0; left: 0;"></div>
                 <div class="position-relative">
                     <h1 class="display-4 mb-3 text-white">Japan's History</h1>
-                    <p class="lead mb-0 text-white">Discover amazing stories and insightful articles about the fascinating world of Japanese history and culture.</p>
+                    <p class="lead mb-0 text-white">"From ancient tombs to modern towers, Japan’s story is one of resilience, ritual, and rebirth. Step into the chronicles of an archipelago where every era forged a new destiny."</p>
                 </div>
             </div>
         </a>
@@ -59,8 +59,8 @@
                 <div class="card-body position-relative d-flex flex-column justify-content-end text-white h-100 p-4">
                     <div class="mb-3">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <span class="badge bg-{{ 'primary' if featured_post.post_type == 'story' else 'secondary' }} fs-6 px-3 py-2">
-                                {{ featured_post.post_type.title() }}
+                            <span class="badge bg-secondary fs-6 px-3 py-2">
+                                Article
                             </span>
                             <small class="text-light opacity-75">{{ featured_post.created_at[:10] }}</small>
                         </div>
@@ -140,8 +140,8 @@
             <div class="card-body position-relative d-flex flex-column justify-content-end text-white h-100 p-3">
                 <div>
                     <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="badge bg-{{ 'primary' if post.post_type == 'story' else 'secondary' }} fs-6">
-                            {{ post.post_type.title() }}
+                        <span class="badge bg-secondary fs-6">
+                            Article
                         </span>
                         <small class="text-light opacity-75">{{ post.created_at[:10] }}</small>
                     </div>
@@ -163,7 +163,7 @@
 <div class="text-center py-5">
     <h3>No posts yet</h3>
     {% if is_admin_logged_in %}
-    <p class="text-muted">Be the first to share your story or article!</p>
+    <p class="text-muted">Be the first to share an article!</p>
     <a href="{{ url_for('posts.create_post') }}" class="btn btn-primary">Create First Post</a>
     {% else %}
     <p class="text-muted">Check back soon for new content!</p>

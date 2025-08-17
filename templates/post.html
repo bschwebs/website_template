@@ -4,7 +4,7 @@
 
 {% block meta_description %}{{ post.excerpt if post.excerpt else (post.content|striptags)[:160] }}{% endblock %}
 
-{% block meta_keywords %}{% if tags %}{{ tags|map(attribute='name')|join(', ') }}, {% endif %}{{ post.post_type }}, story hub, blog{% endblock %}
+{% block meta_keywords %}{% if tags %}{{ tags|map(attribute='name')|join(', ') }}, {% endif %}article, Japan history, blog{% endblock %}
 
 {% block canonical_url %}{{ url_for('posts.view_post_by_slug', slug=post.slug, _external=True) if post.slug else url_for('posts.view_post', post_id=post.id, _external=True) }}{% endblock %}
 
@@ -24,7 +24,7 @@
 <script type="application/ld+json">
 {
     "@context": "https://schema.org",
-    "@type": "{% if post.post_type == 'article' %}Article{% else %}BlogPosting{% endif %}",
+    "@type": "Article",
     "headline": "{{ post.title }}",
     "description": "{{ post.excerpt if post.excerpt else (post.content|striptags)[:200] }}",
     "image": "{% if post.image_filename %}{{ url_for('static', filename='uploads/' + post.image_filename, _external=True) }}{% else %}{{ url_for('static', filename='uploads/sample1.jpg', _external=True) }}{% endif %}",
@@ -50,8 +50,8 @@
     {% if tags %}
     "keywords": "{{ tags|map(attribute='name')|join(', ') }}",
     {% endif %}
-    "articleSection": "{{ post.post_type.title() }}",
-    "genre": "{{ post.post_type }}"
+    "articleSection": "Article",
+    "genre": "article"
 }
 </script>
 {% endblock %}
@@ -61,8 +61,8 @@
     <div class="col-lg-8 mx-auto">
         <article>
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <span class="badge bg-{{ 'primary' if post.post_type == 'story' else 'secondary' }} fs-6">
-                    {{ post.post_type.title() }}
+                <span class="badge bg-secondary fs-6">
+                    Article
                 </span>
                 {% if is_admin_logged_in %}
                 <div class="dropdown">
@@ -136,7 +136,7 @@
             
             <!-- Social Sharing -->
             <div class="mt-4 pt-3 border-top">
-                <h6 class="text-muted mb-3">Share this {{ post.post_type }}:</h6>
+                <h6 class="text-muted mb-3">Share this article:</h6>
                 <div class="d-flex flex-wrap gap-2">
                     <!-- Twitter -->
                     <a href="https://twitter.com/intent/tweet?url={{ request.url|urlencode }}&text={{ post.title|urlencode }}&via=JapansHistory" 
@@ -190,9 +190,9 @@
         </article>
         
         <div class="mt-5 pt-4 border-top">
-            <a href="{{ url_for('main.stories' if post.post_type == 'story' else 'main.articles') }}" 
+            <a href="{{ url_for('main.articles') }}" 
                class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left me-2"></i>Back to {{ post.post_type.title() }}s
+                <i class="fas fa-arrow-left me-2"></i>Back to Articles
             </a>
         </div>
     </div>

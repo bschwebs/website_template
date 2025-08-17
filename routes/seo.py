@@ -29,13 +29,6 @@ def sitemap():
         <priority>1.0</priority>
     </url>
     
-    <!-- Stories page -->
-    <url>
-        <loc>{{ url_for('main.stories', _external=True) }}</loc>
-        <lastmod>{{ last_modified }}</lastmod>
-        <changefreq>weekly</changefreq>
-        <priority>0.8</priority>
-    </url>
     
     <!-- Articles page -->
     <url>
@@ -118,7 +111,7 @@ Disallow: /static/uploads/
 
 # Allow important pages
 Allow: /
-Allow: /stories
+Allow: /about
 Allow: /articles
 Allow: /search
 Allow: /tags
@@ -157,7 +150,7 @@ def rss_feed():
     <channel>
         <title>Story Hub - Latest Posts</title>
         <link>{{ url_for('main.index', _external=True) }}</link>
-        <description>Discover amazing stories and insightful articles from our community of writers.</description>
+        <description>Discover insightful articles about Japanese history and culture from our community of writers.</description>
         <language>en-us</language>
         <lastBuildDate>{{ build_date }}</lastBuildDate>
         <atom:link href="{{ url_for('seo.rss_feed', _external=True) }}" rel="self" type="application/rss+xml" />
@@ -169,7 +162,7 @@ def rss_feed():
             <description><![CDATA[{{ post.excerpt if post.excerpt else (post.content|striptags)[:200] }}]]></description>
             <guid>{{ url_for('posts.view_post_by_slug', slug=post.slug, _external=True) if post.slug else url_for('posts.view_post', post_id=post.id, _external=True) }}</guid>
             <pubDate>{{ post.created_at }}</pubDate>
-            <category>{{ post.post_type.title() }}</category>
+            <category>Article</category>
             {% if post.image_filename %}
             <enclosure url="{{ url_for('static', filename='uploads/' + post.image_filename, _external=True) }}" type="image/jpeg" />
             {% endif %}

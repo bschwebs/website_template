@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+
+{% block title %}Activity Log | Admin | Japan's History{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="d-flex align-items-center" style="font-size: 2rem;">
+        <img src="{{ url_for('static', filename='img/Japanese History Blog Logo - Styled.png') }}" 
+             alt="Japan's History Logo" class="me-2" style="height: 48px; width: 48px;">
+        Activity Log
+    </h1>
+</div>
+
+<!-- Quick Links -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-link me-2"></i>Quick Links</h5>
+                <!-- Mobile hamburger toggle -->
+                <button class="btn btn-outline-secondary btn-sm d-md-none" type="button" data-bs-toggle="collapse" data-bs-target="#quickLinksCollapseActivity" aria-expanded="false" aria-controls="quickLinksCollapseActivity">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            <div class="card-body">
+                <!-- Desktop: Always visible, Mobile: Collapsible -->
+                <div class="collapse d-md-block" id="quickLinksCollapseActivity">
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="{{ url_for('admin.admin_dashboard') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                        </a>
+                        <a href="{{ url_for('admin.admin_posts') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-list me-1"></i>Manage Posts
+                        </a>
+                        <a href="{{ url_for('admin.admin_categories') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-folder me-1"></i>Manage Categories
+                        </a>
+                        <a href="{{ url_for('admin.admin_tags') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-tags me-1"></i>Manage Tags
+                        </a>
+                        <a href="{{ url_for('admin.admin_backup') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-download me-1"></i>Backup & Export
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search and Stats -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <form method="GET" action="{{ url_for('admin.admin_activity_log') }}">
+            <div class="input-group">
+                <input type="text" name="query" class="form-control" 
+                       value="{{ search_query }}" 
+                       placeholder="Search activities (action, details, username)...">
+                <button type="submit" class="btn btn-outline-primary">
+                    <i class="fas fa-search"></i>
+                </button>
+                {% if search_query %}
+                <a href="{{ url_for('admin.admin_activity_log') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i>
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+    <div class="col-md-4">
+        <div class="text-md-end">
+            <span class="badge bg-info fs-6">
+                <i class="fas fa-list-ul me-1"></i>{{ total_activities }} Total Activities
+            </span>
+        </div>
+    </div>
+</div>
+
+{% if activities %}
+<!-- Activity Log Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-history me-2"></i>Recent Admin Activities
+                    {% if search_query %}
+                        - Search: "{{ search_query }}"
+                    {% endif %}
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Admin</th>
+                                <th>Action</th>
+                                <th>Details</th>
+                                <th>IP Address</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for activity in activities %}
+                            <tr>
+                                <td>
+                                    <div class="small">
+                                        <div>{{ activity.timestamp[:19] }}</div>
+                                        <span class="text-muted">{{ moment(activity.timestamp).fromNow() if moment else '' }}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">
+                                        <i class="fas fa-user me-1"></i>{{ activity.admin_username }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge {% if 'delete' in activity.action.lower() %}bg-danger{% elif 'create' in activity.action.lower() %}bg-success{% elif 'update' in activity.action.lower() %}bg-warning text-dark{% elif 'login' in activity.action.lower() %}bg-info{% else %}bg-primary{% endif %}">
+                                        {% if 'delete' in activity.action.lower() %}
+                                            <i class="fas fa-trash me-1"></i>
+                                        {% elif 'create' in activity.action.lower() %}
+                                            <i class="fas fa-plus me-1"></i>
+                                        {% elif 'update' in activity.action.lower() %}
+                                            <i class="fas fa-edit me-1"></i>
+                                        {% elif 'login' in activity.action.lower() %}
+                                            <i class="fas fa-sign-in-alt me-1"></i>
+                                        {% elif 'logout' in activity.action.lower() %}
+                                            <i class="fas fa-sign-out-alt me-1"></i>
+                                        {% else %}
+                                            <i class="fas fa-cog me-1"></i>
+                                        {% endif %}
+                                        {{ activity.action }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if activity.details %}
+                                        <div class="small text-muted" style="max-width: 300px;">
+                                            {{ activity.details[:100] }}{% if activity.details|length > 100 %}...{% endif %}
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if activity.ip_address %}
+                                        <code class="small">{{ activity.ip_address }}</code>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if total_pages > 1 %}
+<nav aria-label="Activity log pagination" class="mt-4">
+    <div class="d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center me-3">
+            <span class="text-muted me-3">Page {{ page }} of {{ total_pages }}</span>
+            <div class="btn-group" role="group">
+                {% if page > 1 %}
+                    <a href="{{ url_for('admin.admin_activity_log', page=page-1, query=search_query) }}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-chevron-left"></i> Previous
+                    </a>
+                {% endif %}
+                {% if page < total_pages %}
+                    <a href="{{ url_for('admin.admin_activity_log', page=page+1, query=search_query) }}" class="btn btn-outline-primary btn-sm">
+                        Next <i class="fas fa-chevron-right"></i>
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="text-center py-5">
+    <i class="fas fa-history fa-3x text-muted mb-3"></i>
+    {% if search_query %}
+        <h3>No Activities Found</h3>
+        <p class="text-muted">No activities match your search criteria.</p>
+        <a href="{{ url_for('admin.admin_activity_log') }}" class="btn btn-secondary">
+            <i class="fas fa-times me-1"></i>Clear Search
+        </a>
+    {% else %}
+        <h3>No Activities Logged</h3>
+        <p class="text-muted">Admin activities will appear here once actions are performed.</p>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Information Card -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Activity Log Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-list-ul me-2 text-primary"></i>Tracked Actions</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success me-2"></i>Post creation, editing, and deletion</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Category and tag management</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Image gallery operations</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Admin login and logout</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Configuration changes</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Backup and export operations</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-database me-2 text-warning"></i>Data Retention</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-clock text-info me-2"></i>Activities are logged with timestamps</li>
+                            <li><i class="fas fa-user text-info me-2"></i>Admin username is recorded</li>
+                            <li><i class="fas fa-globe text-info me-2"></i>IP addresses are captured</li>
+                            <li><i class="fas fa-search text-info me-2"></i>Full-text search available</li>
+                            <li><i class="fas fa-archive text-info me-2"></i>Automatic cleanup of old entries</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

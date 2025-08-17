@@ -39,9 +39,13 @@ def init_db():
                 category_id INTEGER,
                 slug TEXT,
                 featured BOOLEAN DEFAULT 0,
+                status TEXT DEFAULT 'published',
+                publish_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                template_id INTEGER,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE SET NULL
+                FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE SET NULL,
+                FOREIGN KEY (template_id) REFERENCES post_templates (id) ON DELETE SET NULL
             );
             
             CREATE TABLE IF NOT EXISTS tags (
@@ -109,6 +113,27 @@ def init_db():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
+            
+            CREATE TABLE IF NOT EXISTS post_templates (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                description TEXT,
+                content_template TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            
+            CREATE TABLE IF NOT EXISTS image_gallery (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                filename TEXT NOT NULL,
+                original_filename TEXT NOT NULL,
+                alt_text TEXT,
+                caption TEXT,
+                file_size INTEGER,
+                width INTEGER,
+                height INTEGER,
+                uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
         ''')
         
         # Create default admin user if none exists
@@ -133,6 +158,24 @@ def init_db():
             # Column doesn't exist, add it
             db.execute('ALTER TABLE posts ADD COLUMN category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL')
         
+        # Migration: Add new post fields if they don't exist
+        try:
+            db.execute('SELECT status FROM posts LIMIT 1')
+        except sqlite3.OperationalError:
+            db.execute('ALTER TABLE posts ADD COLUMN status TEXT DEFAULT "published"')
+        
+        try:
+            db.execute('SELECT publish_date FROM posts LIMIT 1')
+        except sqlite3.OperationalError:
+            db.execute('ALTER TABLE posts ADD COLUMN publish_date TIMESTAMP')
+            # Set default value for existing posts
+            db.execute('UPDATE posts SET publish_date = created_at WHERE publish_date IS NULL')
+        
+        try:
+            db.execute('SELECT template_id FROM posts LIMIT 1')
+        except sqlite3.OperationalError:
+            db.execute('ALTER TABLE posts ADD COLUMN template_id INTEGER')
+        
         # Create default categories for articles
         categories_exist = db.execute('SELECT COUNT(*) FROM categories').fetchone()[0]
         if categories_exist == 0:
@@ -147,6 +190,39 @@ def init_db():
             for name, slug, description in default_categories:
                 db.execute('INSERT INTO categories (name, slug, description) VALUES (?, ?, ?)', 
                           (name, slug, description))
+        
+        # Create default post templates if none exist
+        templates_exist = db.execute('SELECT COUNT(*) FROM post_templates').fetchone()[0]
+        if templates_exist == 0:
+            default_templates = [
+                ('Basic Article', 'Standard article template with introduction, body, and conclusion', 
+                 '<h2>Introduction</h2>\n<p>[Write your introduction here]</p>\n\n<h2>Main Content</h2>\n<p>[Write your main content here]</p>\n\n<h2>Conclusion</h2>\n<p>[Write your conclusion here]</p>'),
+                ('Historical Timeline', 'Template for historical events with timeline structure',
+                 '<h2>Historical Context</h2>\n<p>[Provide background information]</p>\n\n<h2>Timeline of Events</h2>\n<ul>\n<li><strong>[Date]:</strong> [Event description]</li>\n<li><strong>[Date]:</strong> [Event description]</li>\n</ul>\n\n<h2>Significance</h2>\n<p>[Explain the historical significance]</p>'),
+                ('Cultural Deep Dive', 'Template for exploring Japanese cultural topics',
+                 '<h2>Cultural Overview</h2>\n<p>[Introduction to the cultural topic]</p>\n\n<h2>Historical Origins</h2>\n<p>[Explain the historical background]</p>\n\n<h2>Modern Practice</h2>\n<p>[Describe how it\'s practiced today]</p>\n\n<h2>Cultural Impact</h2>\n<p>[Discuss its significance in Japanese society]</p>'),
+                ('Biography', 'Template for writing about historical figures',
+                 '<h2>Early Life</h2>\n<p>[Describe their early life and background]</p>\n\n<h2>Rise to Prominence</h2>\n<p>[Explain how they became important]</p>\n\n<h2>Major Achievements</h2>\n<p>[List and describe their key accomplishments]</p>\n\n<h2>Legacy</h2>\n<p>[Discuss their lasting impact]</p>')
+            ]
+            for name, description, template in default_templates:
+                db.execute('INSERT INTO post_templates (name, description, content_template) VALUES (?, ?, ?)', 
+                          (name, description, template))
+        
+        # Migration: Add activity_log table if it doesn't exist
+        try:
+            db.execute('SELECT COUNT(*) FROM activity_log LIMIT 1')
+        except sqlite3.OperationalError:
+            # Table doesn't exist, create it
+            db.execute('''
+                CREATE TABLE activity_log (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    admin_username TEXT NOT NULL,
+                    action TEXT NOT NULL,
+                    details TEXT,
+                    ip_address TEXT,
+                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
         
         db.commit()
 
@@ -164,49 +240,50 @@ class PostModel:
         return db.execute(query).fetchall()
     
     @staticmethod
-    def get_posts_by_type(post_type):
-        """Get posts filtered by type."""
+    def get_all_articles():
+        """Get all articles."""
         db = get_db()
         return db.execute('''
             SELECT * FROM posts 
-            WHERE post_type = ?
             ORDER BY created_at DESC
-        ''', (post_type,)).fetchall()
+        ''').fetchall()
     
     @staticmethod
-    def get_posts_by_type_paginated(post_type, page=1, per_page=6, category_id=None):
-        """Get paginated posts filtered by type and optionally by category."""
+    def get_articles_paginated(page=1, per_page=6, category_id=None):
+        """Get paginated published articles optionally filtered by category."""
         db = get_db()
         offset = (page - 1) * per_page
         
-        if category_id and post_type == 'article':
+        if category_id:
             return db.execute('''
                 SELECT p.*, c.name as category_name, c.slug as category_slug
                 FROM posts p
                 LEFT JOIN categories c ON p.category_id = c.id
-                WHERE p.post_type = ? AND p.category_id = ?
+                WHERE p.category_id = ? AND p.status = 'published' 
+                AND (p.publish_date IS NULL OR p.publish_date <= CURRENT_TIMESTAMP)
                 ORDER BY p.created_at DESC
                 LIMIT ? OFFSET ?
-            ''', (post_type, category_id, per_page, offset)).fetchall()
+            ''', (category_id, per_page, offset)).fetchall()
         else:
             return db.execute('''
                 SELECT p.*, c.name as category_name, c.slug as category_slug
                 FROM posts p
                 LEFT JOIN categories c ON p.category_id = c.id
-                WHERE p.post_type = ?
+                WHERE p.status = 'published' 
+                AND (p.publish_date IS NULL OR p.publish_date <= CURRENT_TIMESTAMP)
                 ORDER BY p.created_at DESC
                 LIMIT ? OFFSET ?
-            ''', (post_type, per_page, offset)).fetchall()
+            ''', (per_page, offset)).fetchall()
     
     @staticmethod
-    def count_posts_by_type(post_type, category_id=None):
-        """Count posts by type and optionally by category."""
+    def count_articles(category_id=None):
+        """Count articles optionally filtered by category."""
         db = get_db()
-        if category_id and post_type == 'article':
-            return db.execute('SELECT COUNT(*) FROM posts WHERE post_type = ? AND category_id = ?', 
-                            (post_type, category_id)).fetchone()[0]
+        if category_id:
+            return db.execute('SELECT COUNT(*) FROM posts WHERE category_id = ?', 
+                            (category_id,)).fetchone()[0]
         else:
-            return db.execute('SELECT COUNT(*) FROM posts WHERE post_type = ?', (post_type,)).fetchone()[0]
+            return db.execute('SELECT COUNT(*) FROM posts').fetchone()[0]
     
     @staticmethod
     def get_featured_post():
@@ -225,7 +302,7 @@ class PostModel:
         return db.execute('''
             SELECT p.* FROM posts p
             JOIN categories c ON p.category_id = c.id
-            WHERE c.slug = 'introduction' AND p.post_type = 'article'
+            WHERE c.slug = 'introduction'
             LIMIT 1
         ''').fetchone()
     
@@ -253,24 +330,25 @@ class PostModel:
         return db.execute('SELECT * FROM posts WHERE slug = ?', (slug,)).fetchone()
     
     @staticmethod
-    def create_post(title, content, excerpt, image_filename, post_type, slug, image_position_x='center', image_position_y='center', category_id=None):
+    def create_post(title, content, excerpt, image_filename, post_type, slug, image_position_x='center', image_position_y='center', category_id=None, status='published', publish_date=None, template_id=None):
         """Create a new post."""
         db = get_db()
         db.execute('''
-            INSERT INTO posts (title, content, excerpt, image_filename, image_position_x, image_position_y, post_type, slug, category_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (title, content, excerpt, image_filename, image_position_x, image_position_y, post_type, slug, category_id))
+            INSERT INTO posts (title, content, excerpt, image_filename, image_position_x, image_position_y, post_type, slug, category_id, status, publish_date, template_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (title, content, excerpt, image_filename, image_position_x, image_position_y, post_type, slug, category_id, status, publish_date, template_id))
         db.commit()
+        return db.lastrowid
     
     @staticmethod
-    def update_post(post_id, title, content, excerpt, image_filename, post_type, slug, image_position_x='center', image_position_y='center', category_id=None):
+    def update_post(post_id, title, content, excerpt, image_filename, post_type, slug, image_position_x='center', image_position_y='center', category_id=None, status='published', publish_date=None, template_id=None):
         """Update an existing post."""
         db = get_db()
         db.execute('''
             UPDATE posts
-            SET title = ?, content = ?, excerpt = ?, image_filename = ?, image_position_x = ?, image_position_y = ?, post_type = ?, slug = ?, category_id = ?, updated_at = CURRENT_TIMESTAMP
+            SET title = ?, content = ?, excerpt = ?, image_filename = ?, image_position_x = ?, image_position_y = ?, post_type = ?, slug = ?, category_id = ?, status = ?, publish_date = ?, template_id = ?, updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
-        ''', (title, content, excerpt, image_filename, image_position_x, image_position_y, post_type, slug, category_id, post_id))
+        ''', (title, content, excerpt, image_filename, image_position_x, image_position_y, post_type, slug, category_id, status, publish_date, template_id, post_id))
         db.commit()
     
     @staticmethod
@@ -507,7 +585,7 @@ class CategoryModel:
         return db.execute('''
             SELECT c.*, COUNT(p.id) as post_count
             FROM categories c
-            LEFT JOIN posts p ON c.id = p.category_id AND p.post_type = 'article'
+            LEFT JOIN posts p ON c.id = p.category_id
             GROUP BY c.id
             ORDER BY c.name
         ''').fetchall()
@@ -582,8 +660,7 @@ class AdminModel:
         posts = PostModel.get_all_posts()
         return {
             'total_posts': len(posts),
-            'total_stories': len([p for p in posts if p['post_type'] == 'story']),
-            'total_articles': len([p for p in posts if p['post_type'] == 'article'])
+            'total_articles': len(posts)
         }
     
     @staticmethod
@@ -704,3 +781,198 @@ class AboutModel:
             ''', (name, email, bio, image_filename, website_url, github_url, linkedin_url, twitter_url))
         
         db.commit()
+
+
+class PostTemplateModel:
+    """Model for handling post template operations."""
+    
+    @staticmethod
+    def get_all_templates():
+        """Get all post templates."""
+        db = get_db()
+        return db.execute('SELECT * FROM post_templates ORDER BY name').fetchall()
+    
+    @staticmethod
+    def get_template_by_id(template_id):
+        """Get template by ID."""
+        db = get_db()
+        return db.execute('SELECT * FROM post_templates WHERE id = ?', (template_id,)).fetchone()
+    
+    @staticmethod
+    def create_template(name, description, content_template):
+        """Create a new post template."""
+        db = get_db()
+        db.execute('''
+            INSERT INTO post_templates (name, description, content_template)
+            VALUES (?, ?, ?)
+        ''', (name, description, content_template))
+        db.commit()
+        return db.lastrowid
+    
+    @staticmethod
+    def update_template(template_id, name, description, content_template):
+        """Update an existing post template."""
+        db = get_db()
+        db.execute('''
+            UPDATE post_templates
+            SET name = ?, description = ?, content_template = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        ''', (name, description, content_template, template_id))
+        db.commit()
+    
+    @staticmethod
+    def delete_template(template_id):
+        """Delete a post template."""
+        db = get_db()
+        # First, unlink posts from this template
+        db.execute('UPDATE posts SET template_id = NULL WHERE template_id = ?', (template_id,))
+        # Then delete the template
+        db.execute('DELETE FROM post_templates WHERE id = ?', (template_id,))
+        db.commit()
+
+
+class ImageGalleryModel:
+    """Model for handling image gallery operations."""
+    
+    @staticmethod
+    def get_all_images(page=1, per_page=20):
+        """Get paginated images from gallery."""
+        db = get_db()
+        offset = (page - 1) * per_page
+        return db.execute('''
+            SELECT * FROM image_gallery 
+            ORDER BY uploaded_at DESC 
+            LIMIT ? OFFSET ?
+        ''', (per_page, offset)).fetchall()
+    
+    @staticmethod
+    def count_images():
+        """Count total images in gallery."""
+        db = get_db()
+        return db.execute('SELECT COUNT(*) FROM image_gallery').fetchone()[0]
+    
+    @staticmethod
+    def get_image_by_id(image_id):
+        """Get image by ID."""
+        db = get_db()
+        return db.execute('SELECT * FROM image_gallery WHERE id = ?', (image_id,)).fetchone()
+    
+    @staticmethod
+    def add_image(filename, original_filename, alt_text=None, caption=None, file_size=None, width=None, height=None):
+        """Add an image to the gallery."""
+        db = get_db()
+        db.execute('''
+            INSERT INTO image_gallery (filename, original_filename, alt_text, caption, file_size, width, height)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (filename, original_filename, alt_text, caption, file_size, width, height))
+        db.commit()
+        return db.lastrowid
+    
+    @staticmethod
+    def update_image(image_id, alt_text=None, caption=None):
+        """Update image metadata."""
+        db = get_db()
+        db.execute('''
+            UPDATE image_gallery
+            SET alt_text = ?, caption = ?
+            WHERE id = ?
+        ''', (alt_text, caption, image_id))
+        db.commit()
+    
+    @staticmethod
+    def delete_image(image_id):
+        """Delete an image from gallery."""
+        db = get_db()
+        db.execute('DELETE FROM image_gallery WHERE id = ?', (image_id,))
+        db.commit()
+    
+    @staticmethod
+    def search_images(query, page=1, per_page=20):
+        """Search images by filename, alt text, or caption."""
+        db = get_db()
+        offset = (page - 1) * per_page
+        search_term = f'%{query}%'
+        return db.execute('''
+            SELECT * FROM image_gallery
+            WHERE filename LIKE ? OR alt_text LIKE ? OR caption LIKE ?
+            ORDER BY uploaded_at DESC
+            LIMIT ? OFFSET ?
+        ''', (search_term, search_term, search_term, per_page, offset)).fetchall()
+
+
+class ActivityLogModel:
+    """Model for tracking admin activities."""
+    
+    @staticmethod
+    def log_activity(admin_username, action, details=None, ip_address=None):
+        """Log an admin activity."""
+        from datetime import datetime
+        db = get_db()
+        db.execute('''
+            INSERT INTO activity_log (admin_username, action, details, ip_address, timestamp)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (admin_username, action, details, ip_address, datetime.now()))
+        db.commit()
+    
+    @staticmethod
+    def get_recent_activities(limit=50):
+        """Get recent admin activities."""
+        db = get_db()
+        return db.execute('''
+            SELECT * FROM activity_log
+            ORDER BY timestamp DESC
+            LIMIT ?
+        ''', (limit,)).fetchall()
+    
+    @staticmethod
+    def get_activities_paginated(page=1, per_page=20):
+        """Get paginated admin activities."""
+        db = get_db()
+        offset = (page - 1) * per_page
+        return db.execute('''
+            SELECT * FROM activity_log
+            ORDER BY timestamp DESC
+            LIMIT ? OFFSET ?
+        ''', (per_page, offset)).fetchall()
+    
+    @staticmethod
+    def count_activities():
+        """Count total number of activity log entries."""
+        db = get_db()
+        return db.execute('SELECT COUNT(*) FROM activity_log').fetchone()[0]
+    
+    @staticmethod
+    def get_activities_by_admin(admin_username, limit=50):
+        """Get activities for a specific admin user."""
+        db = get_db()
+        return db.execute('''
+            SELECT * FROM activity_log
+            WHERE admin_username = ?
+            ORDER BY timestamp DESC
+            LIMIT ?
+        ''', (admin_username, limit)).fetchall()
+    
+    @staticmethod
+    def delete_old_activities(days_to_keep=30):
+        """Delete activity log entries older than specified days."""
+        from datetime import datetime, timedelta
+        db = get_db()
+        cutoff_date = datetime.now() - timedelta(days=days_to_keep)
+        db.execute('''
+            DELETE FROM activity_log
+            WHERE timestamp < ?
+        ''', (cutoff_date,))
+        db.commit()
+    
+    @staticmethod
+    def search_activities(query, page=1, per_page=20):
+        """Search activities by action or details."""
+        db = get_db()
+        offset = (page - 1) * per_page
+        search_term = f'%{query}%'
+        return db.execute('''
+            SELECT * FROM activity_log
+            WHERE action LIKE ? OR details LIKE ? OR admin_username LIKE ?
+            ORDER BY timestamp DESC
+            LIMIT ? OFFSET ?
+        ''', (search_term, search_term, search_term, per_page, offset)).fetchall()

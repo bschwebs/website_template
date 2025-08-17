@@ -11,32 +11,39 @@
 <div class="row mb-4">
     <div class="col-12">
         <div class="card">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0"><i class="fas fa-link me-2"></i>Quick Links</h5>
+                <!-- Mobile hamburger toggle -->
+                <button class="btn btn-outline-secondary btn-sm d-md-none" type="button" data-bs-toggle="collapse" data-bs-target="#quickLinksCollapse" aria-expanded="false" aria-controls="quickLinksCollapse">
+                    <i class="fas fa-bars"></i>
+                </button>
             </div>
             <div class="card-body">
-                <div class="btn-group" role="group">
-                    <a href="{{ url_for('admin.admin_posts') }}" class="btn btn-outline-primary">
-                        <i class="fas fa-list me-1"></i>Manage Posts
-                    </a>
-                    <a href="{{ url_for('admin.admin_categories') }}" class="btn btn-outline-primary">
-                        <i class="fas fa-folder me-1"></i>Manage Categories
-                    </a>
-                    <a href="{{ url_for('admin.admin_tags') }}" class="btn btn-outline-primary">
-                        <i class="fas fa-tags me-1"></i>Manage Tags
-                    </a>
-                    <a href="{{ url_for('admin.admin_email_config') }}" class="btn btn-outline-primary">
-                        <i class="fas fa-envelope-open-text me-1"></i>Email Config
-                    </a>
-                    <a href="{{ url_for('admin.admin_contact_messages') }}" class="btn btn-outline-primary">
-                        <i class="fas fa-inbox me-1"></i>Contact Messages
-                    </a>
-                    <a href="{{ url_for('admin.admin_about') }}" class="btn btn-outline-primary">
-                        <i class="fas fa-user me-1"></i>About Page
-                    </a>
-                    <a href="{{ url_for('admin.admin_change_password') }}" class="btn btn-outline-primary">
-                        <i class="fas fa-lock me-1"></i>Change Password
-                    </a>
+                <!-- Desktop: Always visible, Mobile: Collapsible -->
+                <div class="collapse d-md-block" id="quickLinksCollapse">
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="{{ url_for('admin.admin_posts') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-list me-1"></i>Manage Posts
+                        </a>
+                        <a href="{{ url_for('admin.admin_categories') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-folder me-1"></i>Manage Categories
+                        </a>
+                        <a href="{{ url_for('admin.admin_tags') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-tags me-1"></i>Manage Tags
+                        </a>
+                        <a href="{{ url_for('admin.admin_email_config') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-envelope-open-text me-1"></i>Email Config
+                        </a>
+                        <a href="{{ url_for('admin.admin_contact_messages') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-inbox me-1"></i>Contact Messages
+                        </a>
+                        <a href="{{ url_for('admin.admin_about') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-user me-1"></i>About Page
+                        </a>
+                        <a href="{{ url_for('admin.admin_change_password') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-lock me-1"></i>Change Password
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -61,21 +68,6 @@
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card bg-success text-white">
-            <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="flex-grow-1">
-                        <h5 class="card-title">Stories</h5>
-                        <h2 class="mb-0">{{ stats.total_stories }}</h2>
-                    </div>
-                    <div class="flex-shrink-0">
-                        <i class="fas fa-book fa-2x"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
         <div class="card bg-info text-white">
             <div class="card-body">
                 <div class="d-flex align-items-center">
@@ -85,6 +77,21 @@
                     </div>
                     <div class="flex-shrink-0">
                         <i class="fas fa-newspaper fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h5 class="card-title">Categories</h5>
+                        <h2 class="mb-0">{{ categories|length }}</h2>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-folder fa-2x"></i>
                     </div>
                 </div>
             </div>
@@ -106,7 +113,7 @@
                             <thead>
                                 <tr>
                                     <th>Title</th>
-                                    <th>Type</th>
+                                    <th>Category</th>
                                     <th>Created</th>
                                     <th>Actions</th>
                                 </tr>
@@ -120,9 +127,13 @@
                                         </a>
                                     </td>
                                     <td>
-                                        <span class="badge bg-{{ 'primary' if post.post_type == 'story' else 'secondary' }}">
-                                            {{ post.post_type.title() }}
-                                        </span>
+                                        {% if post.category_name %}
+                                            <span class="badge bg-secondary">
+                                                {{ post.category_name }}
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted">No Category</span>
+                                        {% endif %}
                                     </td>
                                     <td>{{ post.created_at[:10] }}</td>
                                     <td>

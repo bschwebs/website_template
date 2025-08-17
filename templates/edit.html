@@ -5,20 +5,35 @@
 {% block content %}
 <div class="row">
     <div class="col-lg-8 mx-auto">
-        <h1 class="mb-4"><i class="fas fa-edit me-2"></i>Edit Post</h1>
+        <!-- Content Card for Better Readability -->
+        <div class="card shadow-lg">
+            <div class="card-header bg-primary text-white">
+                <h1 class="mb-0" style="font-size: 1.5rem;"><i class="fas fa-edit me-2"></i>Edit Post</h1>
+            </div>
+            <div class="card-body bg-light" style="background-color: #f8f9fa !important;">
+        
+        <!-- Current Image Preview -->
+        {% if post.image_filename %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-image me-2"></i>Current Featured Image</h6>
+            </div>
+            <div class="card-body text-center">
+                <img src="{{ url_for('static', filename='uploads/' + post.image_filename) }}" 
+                     class="img-fluid rounded" alt="{{ post.title }}"
+                     style="max-height: 200px;">
+                <div class="mt-2 text-muted small">Upload a new image to replace this one</div>
+            </div>
+        </div>
+        {% endif %}
         
         <form method="POST" enctype="multipart/form-data">
             {{ form.hidden_tag() }}
 
             <div class="mb-3">
-                {{ form.post_type.label(class="form-label") }}
-                {{ form.post_type(class="form-select", id="post_type") }}
-            </div>
-            
-            <div class="mb-3" id="category-field" style="display: none;">
                 {{ form.category_id.label(class="form-label") }}
                 {{ form.category_id(class="form-select") }}
-                <div class="form-text">Select a category for this article (only applies to articles)</div>
+                <div class="form-text">Select a category for this article</div>
             </div>
             
             <div class="mb-3">
@@ -41,18 +56,17 @@
             </div>
             
             <div class="mb-3">
-                {{ form.image.label(class="form-label") }}
-                {% if post.image_filename %}
-                <div class="mb-2">
-                    <img src="{{ url_for('static', filename='uploads/' + post.image_filename) }}" 
-                         class="img-thumbnail" style="max-height: 200px;" alt="Current image">
-                    <div class="form-text">Current image</div>
-                </div>
-                {% endif %}
-                {{ form.image(class="form-control", accept="image/png,image/jpg,image/jpeg,image/gif,image/webp") }}
+                {{ form.template_id.label(class="form-label") }}
+                {{ form.template_id(class="form-select", onchange="loadTemplate(this.value)") }}
                 <div class="form-text">
-                    Leave empty to keep current image. Supported formats: PNG, JPG, JPEG, GIF, WebP. Max size: 16MB.
+                    <i class="fas fa-file-code me-1"></i>Choose a template (will replace current content)
                 </div>
+            </div>
+            
+            <div class="mb-3">
+                {{ form.image.label(class="form-label") }}
+                {{ form.image(class="form-control", accept="image/png,image/jpg,image/jpeg,image/gif,image/webp") }}
+                <div class="form-text">Supported formats: PNG, JPG, JPEG, GIF, WebP. Max size: 16MB. Leave empty to keep current image.</div>
             </div>
             
             <div class="row mb-3">
@@ -68,40 +82,116 @@
                 </div>
             </div>
             
+            <!-- Publishing Options -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Publishing Options</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Publication Status</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="status" id="status_published" value="published" {% if form.status.data == 'published' or post.status == 'published' %}checked{% endif %}>
+                                <label class="form-check-label" for="status_published">
+                                    <i class="fas fa-globe me-1"></i>Publish Now
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="status" id="status_draft" value="draft" {% if form.status.data == 'draft' or post.status == 'draft' %}checked{% endif %}>
+                                <label class="form-check-label" for="status_draft">
+                                    <i class="fas fa-file-alt me-1"></i>Save as Draft
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.publish_date.label(class="form-label") }}
+                            {{ form.publish_date(class="form-control") }}
+                            <div class="form-text">
+                                <i class="fas fa-clock me-1"></i>Schedule for later (optional)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <div class="mb-4">
                 {{ form.content.label(class="form-label") }}
-                {{ form.content(class="form-control", rows="15") }}
+                {{ form.content(placeholder="Write your article here...") }}
                 <div class="form-text">
-                    <i class="fas fa-code me-1"></i>HTML tags are supported for rich formatting (links, bold, italic, etc.)
+                    <i class="fas fa-edit me-1"></i>Use the toolbar above for rich formatting (headings, bold, italic, links, etc.)
                 </div>
             </div>
             
             <div class="d-flex gap-2">
                 {{ form.submit(class="btn btn-primary") }}
-                <a href="{{ url_for('posts.view_post', post_id=post.id) }}" class="btn btn-outline-secondary">Cancel</a>
+                {{ form.preview(class="btn btn-outline-info") }}
+                <a href="{{ url_for('posts.preview_post', post_id=post.id) }}" class="btn btn-outline-success" target="_blank">
+                    <i class="fas fa-eye me-1"></i>Preview Current
+                </a>
+                <a href="{{ url_for('posts.view_post_by_slug', slug=post.slug) if post.slug else url_for('posts.view_post', post_id=post.id) }}" class="btn btn-outline-secondary">Cancel</a>
             </div>
         </form>
+            </div>
+        </div>
     </div>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const postTypeField = document.getElementById('post_type');
-    const categoryField = document.getElementById('category-field');
+function loadTemplate(templateId) {
+    if (!templateId) return;
     
-    function toggleCategoryField() {
-        if (postTypeField.value === 'article') {
-            categoryField.style.display = 'block';
-        } else {
-            categoryField.style.display = 'none';
-        }
+    if (!confirm('Loading a template will replace the current content. Are you sure?')) {
+        // Reset select to current value
+        document.querySelector('select[name="template_id"]').value = '{{ post.template_id or "" }}';
+        return;
     }
     
-    // Initial check
-    toggleCategoryField();
+    fetch(`{{ url_for('posts.get_template_content', template_id=0) }}`.replace('0', templateId))
+        .then(response => response.json())
+        .then(data => {
+            if (data.content) {
+                // For Quill editor
+                if (window.quillEditor) {
+                    window.quillEditor.root.innerHTML = data.content;
+                    // Update hidden input
+                    const hiddenInput = document.getElementById('content');
+                    if (hiddenInput) {
+                        hiddenInput.value = data.content;
+                    }
+                } else {
+                    // Fallback for regular textarea
+                    const contentField = document.getElementById('content');
+                    if (contentField) {
+                        contentField.value = data.content;
+                    }
+                }
+            } else {
+                alert('Could not load template content');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading template:', error);
+            alert('Error loading template');
+        });
+}
+
+// Handle publish date changes
+document.addEventListener('DOMContentLoaded', function() {
+    const publishDateInput = document.getElementById('publish_date');
     
-    // Listen for changes
-    postTypeField.addEventListener('change', toggleCategoryField);
+    if (publishDateInput) {
+        publishDateInput.addEventListener('change', function() {
+            const selectedDate = new Date(this.value);
+            const now = new Date();
+            
+            if (selectedDate > now) {
+                // Future date selected, suggest draft status
+                document.getElementById('status_draft').checked = true;
+                document.getElementById('status_published').checked = false;
+            }
+        });
+    }
 });
 </script>
 {% endblock %}

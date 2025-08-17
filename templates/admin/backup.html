@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block title %}Backup & Export | Admin | Japan's History{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="d-flex align-items-center" style="font-size: 2rem;">
+        <img src="{{ url_for('static', filename='img/Japanese History Blog Logo - Styled.png') }}" 
+             alt="Japan's History Logo" class="me-2" style="height: 48px; width: 48px;">
+        Backup & Export
+    </h1>
+</div>
+
+<!-- Quick Links -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-link me-2"></i>Quick Links</h5>
+                <!-- Mobile hamburger toggle -->
+                <button class="btn btn-outline-secondary btn-sm d-md-none" type="button" data-bs-toggle="collapse" data-bs-target="#quickLinksCollapseBackup" aria-expanded="false" aria-controls="quickLinksCollapseBackup">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            <div class="card-body">
+                <!-- Desktop: Always visible, Mobile: Collapsible -->
+                <div class="collapse d-md-block" id="quickLinksCollapseBackup">
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="{{ url_for('admin.admin_dashboard') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                        </a>
+                        <a href="{{ url_for('admin.admin_posts') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-list me-1"></i>Manage Posts
+                        </a>
+                        <a href="{{ url_for('admin.admin_categories') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-folder me-1"></i>Manage Categories
+                        </a>
+                        <a href="{{ url_for('admin.admin_tags') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-tags me-1"></i>Manage Tags
+                        </a>
+                        <a href="{{ url_for('admin.admin_gallery') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-images me-1"></i>Image Gallery
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <!-- Complete Backup Section -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-download me-2"></i>Complete Backup</h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">
+                    Download a complete backup of your website including all posts, categories, tags, templates, 
+                    about information, and uploaded media files in a single ZIP archive.
+                </p>
+                <a href="{{ url_for('admin.admin_complete_backup') }}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-archive me-2"></i>Download Complete Backup
+                </a>
+                <div class="mt-3">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle me-1"></i>
+                        The backup will include: posts.json, categories.json, tags.json, templates.json, 
+                        about.json, all uploaded images, and backup metadata.
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Individual Export Options -->
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="fas fa-file-export me-2"></i>Individual Exports</h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text mb-4">
+                    Export specific content types as JSON files for data analysis, migration, or selective backup.
+                </p>
+
+                <div class="row">
+                    <div class="col-md-6 col-lg-3 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-file-alt fa-3x text-primary mb-3"></i>
+                                <h6 class="card-title">Posts</h6>
+                                <p class="card-text small">
+                                    Export all posts with content, metadata, and associated information.
+                                </p>
+                                <a href="{{ url_for('admin.admin_export_posts') }}" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-download me-1"></i>Export Posts
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-3 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-folder fa-3x text-success mb-3"></i>
+                                <h6 class="card-title">Categories</h6>
+                                <p class="card-text small">
+                                    Export all categories with names, slugs, and descriptions.
+                                </p>
+                                <a href="{{ url_for('admin.admin_export_categories') }}" class="btn btn-outline-success btn-sm">
+                                    <i class="fas fa-download me-1"></i>Export Categories
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-3 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-tags fa-3x text-warning mb-3"></i>
+                                <h6 class="card-title">Tags</h6>
+                                <p class="card-text small">
+                                    Export all tags with usage statistics and metadata.
+                                </p>
+                                <a href="{{ url_for('admin.admin_export_tags') }}" class="btn btn-outline-warning btn-sm">
+                                    <i class="fas fa-download me-1"></i>Export Tags
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-3 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-images fa-3x text-info mb-3"></i>
+                                <h6 class="card-title">Media Gallery</h6>
+                                <p class="card-text small">
+                                    Access the media gallery to manage uploaded files.
+                                </p>
+                                <a href="{{ url_for('admin.admin_gallery') }}" class="btn btn-outline-info btn-sm">
+                                    <i class="fas fa-external-link-alt me-1"></i>Manage Media
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Backup Information -->
+        <div class="card mt-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Backup Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-shield-alt me-2 text-success"></i>What's Included</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success me-2"></i>All published and draft posts</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Categories and tags</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Post templates</li>
+                            <li><i class="fas fa-check text-success me-2"></i>About page information</li>
+                            <li><i class="fas fa-check text-success me-2"></i>All uploaded images and media</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Backup metadata and timestamps</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-exclamation-triangle me-2 text-warning"></i>Important Notes</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-info-circle text-info me-2"></i>Database credentials are not included</li>
+                            <li><i class="fas fa-info-circle text-info me-2"></i>Admin passwords are not exported</li>
+                            <li><i class="fas fa-info-circle text-info me-2"></i>System configuration files are excluded</li>
+                            <li><i class="fas fa-info-circle text-info me-2"></i>Timestamps are in ISO format</li>
+                            <li><i class="fas fa-info-circle text-info me-2"></i>Images maintain original quality</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="alert alert-warning mt-3">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Recommendation:</strong> Perform regular backups, especially before making significant changes to your content or system configuration.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

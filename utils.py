@@ -67,6 +67,8 @@ def save_uploaded_file(file, upload_folder):
     return None
 
 
+
+
 def generate_tag_slug(tag_name):
     """Generate a URL-friendly slug for a tag."""
     return slugify(tag_name.lower())
@@ -107,17 +109,13 @@ def generate_meta_description(content, excerpt=None, max_length=160):
     return description
 
 
-def generate_keywords(tags, post_type=None, additional_keywords=None):
+def generate_keywords(tags, additional_keywords=None):
     """Generate SEO keywords from tags and additional context."""
     keywords = []
     
     # Add tags as keywords
     if tags:
         keywords.extend([tag.strip().lower() for tag in tags if tag.strip()])
-    
-    # Add post type as keyword
-    if post_type:
-        keywords.append(post_type.lower())
     
     # Add additional keywords
     if additional_keywords:
@@ -126,7 +124,7 @@ def generate_keywords(tags, post_type=None, additional_keywords=None):
         keywords.extend([kw.strip().lower() for kw in additional_keywords if kw.strip()])
     
     # Add default site keywords
-    default_keywords = ['blog', 'story hub', 'articles', 'stories', 'writing']
+    default_keywords = ['blog', 'Japan history', 'articles', 'Japanese culture', 'writing']
     keywords.extend(default_keywords)
     
     # Remove duplicates while preserving order

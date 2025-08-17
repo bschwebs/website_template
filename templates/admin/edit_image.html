@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Image | Admin{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="d-flex align-items-center" style="font-size: 2rem;">
+        <img src="{{ url_for('static', filename='img/Japanese History Blog Logo - Styled.png') }}" alt="Japan's History Logo" class="me-2" style="height: 48px; width: 48px;">
+        Edit Image
+    </h1>
+    <a href="{{ url_for('admin.admin_gallery') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-1"></i>Back to Gallery
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-edit me-2"></i>Image Metadata
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ form.alt_text.label(class="form-label") }}
+                        {{ form.alt_text(class="form-control", placeholder="Describe what the image shows") }}
+                        {% if form.alt_text.errors %}
+                            <div class="text-danger small">
+                                {% for error in form.alt_text.errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            Alt text helps screen readers and improves accessibility. Be descriptive but concise.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        {{ form.caption.label(class="form-label") }}
+                        {{ form.caption(class="form-control", placeholder="Optional caption for display") }}
+                        {% if form.caption.errors %}
+                            <div class="text-danger small">
+                                {% for error in form.caption.errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            Caption will be displayed below the image when used in posts.
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('admin.admin_gallery') }}" class="btn btn-secondary">
+                            <i class="fas fa-times me-1"></i>Cancel
+                        </a>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-image me-2"></i>Image Preview
+                </h5>
+            </div>
+            <div class="card-body text-center">
+                <img src="{{ url_for('static', filename='uploads/' + image.filename) }}" 
+                     class="img-fluid rounded mb-3" alt="{{ image.alt_text or image.original_filename }}"
+                     style="max-height: 300px;">
+                
+                <h6>{{ image.original_filename }}</h6>
+                <div class="text-muted small">
+                    {% if image.width and image.height %}
+                        <div><i class="fas fa-ruler-combined me-1"></i>{{ image.width }} × {{ image.height }} pixels</div>
+                    {% endif %}
+                    {% if image.file_size %}
+                        <div><i class="fas fa-file me-1"></i>{{ (image.file_size / 1024) | round(1) }} KB</div>
+                    {% endif %}
+                    <div><i class="fas fa-calendar me-1"></i>{{ image.uploaded_at[:10] }}</div>
+                </div>
+                
+                <div class="mt-3">
+                    <button class="btn btn-sm btn-outline-primary copy-url-btn" 
+                            data-url="{{ url_for('static', filename='uploads/' + image.filename) }}"
+                            title="Copy URL">
+                        <i class="fas fa-copy me-1"></i>Copy URL
+                    </button>
+                    <a href="{{ url_for('static', filename='uploads/' + image.filename) }}" 
+                       target="_blank" class="btn btn-sm btn-outline-info">
+                        <i class="fas fa-external-link-alt me-1"></i>View Full Size
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-lightbulb me-2"></i>Tips
+                </h5>
+            </div>
+            <div class="card-body">
+                <h6>Writing Good Alt Text</h6>
+                <ul class="small">
+                    <li>Describe the content and function</li>
+                    <li>Be specific but concise</li>
+                    <li>Avoid "image of" or "picture of"</li>
+                    <li>Include important text in images</li>
+                </ul>
+                
+                <h6 class="mt-3">Caption Guidelines</h6>
+                <ul class="small">
+                    <li>Provide context or explanation</li>
+                    <li>Credit sources when needed</li>
+                    <li>Keep it engaging and relevant</li>
+                    <li>Can include humor or personality</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Copy URL functionality
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelector('.copy-url-btn').addEventListener('click', function() {
+        const url = this.dataset.url;
+        navigator.clipboard.writeText(window.location.origin + url).then(() => {
+            const icon = this.querySelector('i');
+            const originalClass = icon.className;
+            icon.className = 'fas fa-check me-1';
+            this.classList.remove('btn-outline-primary');
+            this.classList.add('btn-success');
+            setTimeout(() => {
+                icon.className = originalClass;
+                this.classList.remove('btn-success');
+                this.classList.add('btn-outline-primary');
+            }, 2000);
+        });
+    });
+});
+</script>
+{% endblock %}

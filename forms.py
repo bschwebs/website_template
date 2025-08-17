@@ -2,26 +2,42 @@
 Flask-WTF forms for the Story Hub application.
 """
 from flask_wtf import FlaskForm
-from wtforms import StringField, TextAreaField, SelectField, SubmitField, FileField, PasswordField, ValidationError
+from wtforms import StringField, TextAreaField, SelectField, SubmitField, FileField, PasswordField, ValidationError, DateTimeLocalField, RadioField, HiddenField, MultipleFileField
 from wtforms.validators import DataRequired, Length, Email, Optional, URL
+from wtforms.widgets import TextArea
+from markupsafe import Markup
+import html
+
+
+class RichTextAreaField(TextAreaField):
+    """Text area field that will be enhanced with Quill.js on the frontend."""
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('render_kw', {})
+        kwargs['render_kw']['class'] = 'form-control quill-target'
+        kwargs['render_kw']['style'] = 'display: none;'  # Hide the textarea, Quill will replace it
+        super().__init__(*args, **kwargs)
 
 
 class PostForm(FlaskForm):
     """Form for creating and editing posts."""
     title = StringField('Title', validators=[DataRequired(), Length(min=2, max=100)])
-    content = TextAreaField('Content', validators=[DataRequired()])
+    content = RichTextAreaField('Content', validators=[DataRequired()])
     excerpt = StringField('Excerpt', validators=[Length(max=200)])
-    post_type = SelectField('Type', choices=[('article', 'Article'), ('story', 'Story')], validators=[DataRequired()])
-    category_id = SelectField('Category', choices=[], coerce=lambda x: int(x) if x else None, render_kw={"data-post-type": "article"})
+    category_id = SelectField('Category', choices=[], coerce=lambda x: int(x) if x and x != '' else None)
     tags = StringField('Tags', validators=[Length(max=500)], render_kw={"placeholder": "Enter tags separated by commas (e.g., technology, web development, python)"})
-    image = FileField('Image')
+    template_id = SelectField('Template', choices=[], coerce=lambda x: int(x) if x and str(x).strip() and x != 'None' else None, validators=[Optional()])
+    status = RadioField('Status', choices=[('draft', 'Save as Draft'), ('published', 'Publish Now')], default='published')
+    publish_date = DateTimeLocalField('Publish Date', validators=[Optional()], 
+                                    render_kw={"placeholder": "Leave empty to publish immediately"})
+    image = FileField('Featured Image')
     image_position_x = SelectField('Image Horizontal Position', 
                                  choices=[('left', 'Left'), ('center', 'Center'), ('right', 'Right')], 
                                  default='center')
     image_position_y = SelectField('Image Vertical Position', 
                                  choices=[('top', 'Top'), ('center', 'Center'), ('bottom', 'Bottom')], 
                                  default='center')
-    submit = SubmitField('Publish')
+    submit = SubmitField('Save Post')
+    preview = SubmitField('Preview', render_kw={"formtarget": "_blank"})
 
 
 class DeleteForm(FlaskForm):
@@ -92,3 +108,37 @@ class AboutForm(FlaskForm):
     linkedin_url = StringField('LinkedIn URL', validators=[Optional(), URL(), Length(max=200)])
     twitter_url = StringField('Twitter URL', validators=[Optional(), URL(), Length(max=200)])
     submit = SubmitField('Save About Info')
+
+
+class PostTemplateForm(FlaskForm):
+    """Form for creating and editing post templates."""
+    name = StringField('Template Name', validators=[DataRequired(), Length(min=2, max=100)])
+    description = StringField('Description', validators=[Optional(), Length(max=200)])
+    content_template = RichTextAreaField('Template Content', validators=[DataRequired()])
+    submit = SubmitField('Save Template')
+
+
+class ImageGalleryForm(FlaskForm):
+    """Form for uploading images to gallery."""
+    images = MultipleFileField('Select Images', validators=[DataRequired()])
+    submit = SubmitField('Upload Images')
+
+
+class ImageEditForm(FlaskForm):
+    """Form for editing image metadata."""
+    alt_text = StringField('Alt Text', validators=[Optional(), Length(max=200)])
+    caption = StringField('Caption', validators=[Optional(), Length(max=300)])
+    submit = SubmitField('Update Image')
+
+
+class ImageSearchForm(FlaskForm):
+    """Form for searching images in gallery."""
+    query = StringField('Search Images', validators=[Length(max=200)], 
+                       render_kw={"placeholder": "Search by filename, alt text, or caption..."})
+    submit = SubmitField('Search')
+
+
+class BulkDeleteForm(FlaskForm):
+    """Form for bulk deletion operations (CSRF protection)."""
+    selected_items = HiddenField('Selected Items', validators=[DataRequired()])
+    submit = SubmitField('Delete Selected')

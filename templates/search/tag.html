@@ -4,7 +4,7 @@
 
 {% block meta_description %}Discover posts tagged with "{{ tag.name }}" on Japan's History. Browse {{ total_posts }} post{{ 's' if total_posts != 1 else '' }} about {{ tag.name }}.{% endblock %}
 
-{% block meta_keywords %}{{ tag.name }}, tagged posts, {{ tag.name }} articles, {{ tag.name }} stories, Japan's History{% endblock %}
+{% block meta_keywords %}{{ tag.name }}, tagged posts, {{ tag.name }} articles, Japan's History{% endblock %}
 
 {% block canonical_url %}{{ url_for('search.posts_by_tag', slug=tag.slug, _external=True) }}{% endblock %}
 
@@ -30,7 +30,7 @@
                 "@type": "ListItem",
                 "position": {{ loop.index }},
                 "item": {
-                    "@type": "{% if post.post_type == 'article' %}Article{% else %}BlogPosting{% endif %}",
+                    "@type": "Article",
                     "headline": "{{ post.title }}",
                     "url": "{{ url_for('posts.view_post_by_slug', slug=post.slug, _external=True) if post.slug else url_for('posts.view_post', post_id=post.id, _external=True) }}"
                 }
@@ -131,8 +131,8 @@
                         <div class="card-body position-relative d-flex flex-column justify-content-end text-white h-100 p-3">
                             <div>
                                 <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <span class="badge bg-{{ 'primary' if post.post_type == 'story' else 'secondary' }} fs-6">
-                                        {{ post.post_type.title() }}
+                                    <span class="badge bg-secondary fs-6">
+                                        Article
                                     </span>
                                     <small class="text-light opacity-75">{{ post.created_at[:10] }}</small>
                                 </div>

@@ -5,41 +5,53 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="d-flex align-items-center" style="font-size: 2rem;"><img src="{{ url_for('static', filename='img/Japanese History Blog Logo - Styled.png') }}" alt="Japan's History Logo" class="me-2" style="height: 48px; width: 48px;">Manage Posts</h1>
-    <a href="{{ url_for('posts.create_post') }}" class="btn btn-primary">
-        <i class="fas fa-plus me-1"></i>New Post
-    </a>
+    <div class="d-flex gap-2">
+        <button id="bulkDeleteBtn" class="btn btn-danger" style="display: none;" onclick="confirmBulkDelete()">
+            <i class="fas fa-trash me-1"></i>Delete Selected
+        </button>
+        <a href="{{ url_for('posts.create_post') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i>New Post
+        </a>
+    </div>
 </div>
 
 <!-- Quick Links -->
 <div class="row mb-4">
     <div class="col-12">
         <div class="card">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0"><i class="fas fa-link me-2"></i>Quick Links</h5>
+                <!-- Mobile hamburger toggle -->
+                <button class="btn btn-outline-secondary btn-sm d-md-none" type="button" data-bs-toggle="collapse" data-bs-target="#quickLinksCollapsePosts" aria-expanded="false" aria-controls="quickLinksCollapsePosts">
+                    <i class="fas fa-bars"></i>
+                </button>
             </div>
             <div class="card-body">
-                <div class="btn-group" role="group">
-                    <a href="{{ url_for('admin.admin_dashboard') }}" class="btn btn-outline-primary">
+                <!-- Desktop: Always visible, Mobile: Collapsible -->
+                <div class="collapse d-md-block" id="quickLinksCollapsePosts">
+                    <div class="d-flex flex-wrap gap-2">
+                    <a href="{{ url_for('admin.admin_dashboard') }}" class="btn btn-outline-primary btn-sm">
                         <i class="fas fa-tachometer-alt me-1"></i>Dashboard
                     </a>
-                    <a href="{{ url_for('admin.admin_categories') }}" class="btn btn-outline-primary">
+                    <a href="{{ url_for('admin.admin_categories') }}" class="btn btn-outline-primary btn-sm">
                         <i class="fas fa-folder me-1"></i>Manage Categories
                     </a>
-                    <a href="{{ url_for('admin.admin_tags') }}" class="btn btn-outline-primary">
+                    <a href="{{ url_for('admin.admin_tags') }}" class="btn btn-outline-primary btn-sm">
                         <i class="fas fa-tags me-1"></i>Manage Tags
                     </a>
-                    <a href="{{ url_for('admin.admin_email_config') }}" class="btn btn-outline-primary">
+                    <a href="{{ url_for('admin.admin_email_config') }}" class="btn btn-outline-primary btn-sm">
                         <i class="fas fa-envelope-open-text me-1"></i>Email Config
                     </a>
-                    <a href="{{ url_for('admin.admin_contact_messages') }}" class="btn btn-outline-primary">
+                    <a href="{{ url_for('admin.admin_contact_messages') }}" class="btn btn-outline-primary btn-sm">
                         <i class="fas fa-inbox me-1"></i>Contact Messages
                     </a>
-                    <a href="{{ url_for('admin.admin_about') }}" class="btn btn-outline-primary">
+                    <a href="{{ url_for('admin.admin_about') }}" class="btn btn-outline-primary btn-sm">
                         <i class="fas fa-user me-1"></i>About Page
                     </a>
-                    <a href="{{ url_for('admin.admin_change_password') }}" class="btn btn-outline-primary">
+                    <a href="{{ url_for('admin.admin_change_password') }}" class="btn btn-outline-primary btn-sm">
                         <i class="fas fa-lock me-1"></i>Change Password
                     </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -55,9 +67,12 @@
                         <table class="table table-hover">
                             <thead>
                                 <tr>
+                                    <th>
+                                        <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                                    </th>
                                     <th>Image</th>
                                     <th>Title</th>
-                                    <th>Type</th>
+                                    <th>Category</th>
                                     <th>Featured</th>
                                     <th>Excerpt</th>
                                     <th>Created</th>
@@ -68,6 +83,9 @@
                             <tbody>
                                 {% for post in posts %}
                                 <tr>
+                                    <td>
+                                        <input type="checkbox" class="post-checkbox" value="{{ post.id }}" onchange="updateBulkDeleteButton()">
+                                    </td>
                                     <td>
                                         {% if post.image_filename %}
                                             <img src="{{ url_for('static', filename='uploads/' + post.image_filename) }}" 
@@ -85,9 +103,13 @@
                                         </a>
                                     </td>
                                     <td>
-                                        <span class="badge bg-{{ 'primary' if post.post_type == 'story' else 'secondary' }}">
-                                            {{ post.post_type.title() }}
-                                        </span>
+                                        {% if post.category_name %}
+                                            <span class="badge bg-secondary">
+                                                {{ post.category_name }}
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted">No Category</span>
+                                        {% endif %}
                                     </td>
                                     <td>
                                         {% if post.featured %}
@@ -168,4 +190,71 @@
         </div>
     </div>
 </div>
+
+<!-- Hidden form for bulk deletion -->
+<form id="bulkDeleteForm" method="POST" action="{{ url_for('admin.admin_bulk_delete_posts') }}" style="display: none;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+    <input type="hidden" name="selected_items" id="selectedItems"/>
+</form>
+
+<script>
+function toggleSelectAll() {
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('.post-checkbox');
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAll.checked;
+    });
+    
+    updateBulkDeleteButton();
+}
+
+function updateBulkDeleteButton() {
+    const checkboxes = document.querySelectorAll('.post-checkbox:checked');
+    const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+    const selectAllCheckbox = document.getElementById('selectAll');
+    
+    if (checkboxes.length > 0) {
+        bulkDeleteBtn.style.display = 'block';
+        bulkDeleteBtn.textContent = `Delete Selected (${checkboxes.length})`;
+    } else {
+        bulkDeleteBtn.style.display = 'none';
+    }
+    
+    // Update "select all" checkbox state
+    const allCheckboxes = document.querySelectorAll('.post-checkbox');
+    if (checkboxes.length === allCheckboxes.length && allCheckboxes.length > 0) {
+        selectAllCheckbox.checked = true;
+        selectAllCheckbox.indeterminate = false;
+    } else if (checkboxes.length > 0) {
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = true;
+    } else {
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = false;
+    }
+}
+
+function confirmBulkDelete() {
+    const checkboxes = document.querySelectorAll('.post-checkbox:checked');
+    const selectedIds = Array.from(checkboxes).map(cb => cb.value);
+    
+    if (selectedIds.length === 0) {
+        alert('No posts selected for deletion.');
+        return;
+    }
+    
+    const message = `Are you sure you want to delete ${selectedIds.length} post(s)? This action cannot be undone.`;
+    
+    if (confirm(message)) {
+        document.getElementById('selectedItems').value = JSON.stringify(selectedIds);
+        document.getElementById('bulkDeleteForm').submit();
+    }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    updateBulkDeleteButton();
+});
+</script>
 {% endblock %}

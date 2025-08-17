@@ -56,40 +56,6 @@ def index():
                          popular_tags=popular_tags)
 
 
-@main.route('/stories')
-def stories():
-    """Stories page with pagination."""
-    # Get pagination parameters
-    page = request.args.get('page', 1, type=int)
-    
-    # Responsive pagination - 6 for larger devices, 3 for mobile
-    # We'll use JavaScript to determine this, but default to 6
-    per_page = request.args.get('per_page', 6, type=int)
-    if per_page not in [3, 6]:
-        per_page = 6  # Default fallback
-    
-    # Get paginated stories
-    stories = PostModel.get_posts_by_type_paginated('story', page, per_page)
-    total_stories = PostModel.count_posts_by_type('story')
-    
-    # Calculate pagination info
-    total_pages = (total_stories + per_page - 1) // per_page
-    has_prev = page > 1
-    has_next = page < total_pages
-    prev_page = page - 1 if has_prev else None
-    next_page = page + 1 if has_next else None
-    
-    return render_template('stories.html', 
-                         stories=stories,
-                         page=page,
-                         total_pages=total_pages,
-                         has_prev=has_prev,
-                         has_next=has_next,
-                         prev_page=prev_page,
-                         next_page=next_page,
-                         per_page=per_page,
-                         total_stories=total_stories)
-
 
 @main.route('/articles')
 def articles():
@@ -104,8 +70,8 @@ def articles():
         per_page = 6  # Default fallback
     
     # Get paginated articles
-    articles = PostModel.get_posts_by_type_paginated('article', page, per_page)
-    total_articles = PostModel.count_posts_by_type('article')
+    articles = PostModel.get_articles_paginated(page, per_page)
+    total_articles = PostModel.count_articles()
     
     # Calculate pagination info
     total_pages = (total_articles + per_page - 1) // per_page
@@ -143,8 +109,8 @@ def articles_by_category(category_slug):
         per_page = 6  # Default fallback
     
     # Get paginated articles for this category
-    articles = PostModel.get_posts_by_type_paginated('article', page, per_page, category['id'])
-    total_articles = PostModel.count_posts_by_type('article', category['id'])
+    articles = PostModel.get_articles_paginated(page, per_page, category['id'])
+    total_articles = PostModel.count_articles(category['id'])
     
     # Calculate pagination info
     total_pages = (total_articles + per_page - 1) // per_page
