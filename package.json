@@ -1,0 +1,24 @@
+{
+  "name": "website_template",
+  "version": "1.0.0",
+  "description": "A modern, feature-rich blog application built with Flask, featuring comprehensive content management, tagging system, and full-text search capabilities.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bschwebs/website_template.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/bschwebs/website_template/issues"
+  },
+  "homepage": "https://github.com/bschwebs/website_template#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.54.2",
+    "playwright": "^1.54.2"
+  }
+}

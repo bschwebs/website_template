@@ -17,7 +17,14 @@ def index():
     """Home page with featured post and latest posts."""
     # Get pagination parameters
     page = request.args.get('page', 1, type=int)
-    per_page = 3  # Show 3 posts per page
+    
+    # Responsive pagination based on screen size
+    # Default: 3 cards (desktop: 1 row), medium: 2 cards (1 row), mobile: 3 cards (3 rows)
+    per_page = request.args.get('per_page', 3, type=int)
+    
+    # Validate per_page values (allow 2 for medium screens, 3 for desktop/mobile)
+    if per_page not in [2, 3, 6]:
+        per_page = 3  # Default fallback
     
     # Get featured post
     featured_post = PostModel.get_featured_post()
@@ -53,6 +60,7 @@ def index():
                          has_next=has_next,
                          prev_page=prev_page,
                          next_page=next_page,
+                         per_page=per_page,
                          popular_tags=popular_tags)
 
 

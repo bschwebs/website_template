@@ -1509,7 +1509,7 @@ footer {
     }
 }
 
-@media (min-width: 1200px) {
+@media (min-width: 850px) {
     .posts-grid-enhanced {
         grid-template-columns: repeat(3, 1fr);
     }

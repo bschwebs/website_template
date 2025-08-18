@@ -190,6 +190,11 @@ function addPageTransition() {
             // Skip if it's a download link or external
             if (link.download || link.target === '_blank') return;
             
+            // Skip if it's a dropdown toggle (has dropdown-toggle class or data-bs-toggle attribute)
+            if (link.classList.contains('dropdown-toggle') || 
+                link.getAttribute('data-bs-toggle') === 'dropdown' ||
+                link.getAttribute('role') === 'button') return;
+            
             pageTransition.classList.add('loading');
             
             // Remove loading class after navigation
@@ -521,6 +526,12 @@ class PaginationManager {
             const url = new URL(window.location);
             url.searchParams.set('page', pageNumber);
             
+            // Preserve per_page parameter if responsive pagination is active
+            if (window.responsivePaginationManager) {
+                const currentPerPage = window.responsivePaginationManager.currentPerPage;
+                url.searchParams.set('per_page', currentPerPage);
+            }
+            
             const response = await fetch(url, {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
@@ -810,6 +821,121 @@ function initializeLazyLoading() {
     }
 }
 
+/**
+ * Responsive Pagination Manager
+ * Automatically adjusts posts per page based on screen size
+ */
+class ResponsivePaginationManager {
+    constructor() {
+        this.currentPerPage = this.getOptimalPerPage();
+        this.isHomePage = window.location.pathname === '/';
+        
+        this.init();
+    }
+    
+    init() {
+        if (!this.isHomePage) return;
+        
+        // Set initial per_page based on screen size
+        this.adjustPaginationForScreenSize();
+        
+        // Listen for screen size changes
+        window.addEventListener('resize', () => {
+            this.handleScreenSizeChange();
+        });
+        
+        // Handle initial page load with current screen size
+        this.handleInitialLoad();
+    }
+    
+    getOptimalPerPage() {
+        const width = window.innerWidth;
+        
+        // Mobile: 1 column - show 2 cards (2 rows, clean stacking)
+        if (width < 768) return 2;
+        
+        // Small tablet: 2 columns - show 2 cards (1 row, perfectly filled) 
+        if (width >= 768 && width < 850) return 2;
+        
+        // Large tablet/Desktop: Can comfortably handle 3 cards with good spacing
+        return 3;
+    }
+    
+    adjustPaginationForScreenSize() {
+        const optimalPerPage = this.getOptimalPerPage();
+        
+        if (optimalPerPage !== this.currentPerPage) {
+            this.currentPerPage = optimalPerPage;
+            this.updatePaginationIfNeeded();
+        }
+    }
+    
+    handleScreenSizeChange() {
+        // Debounce resize events
+        clearTimeout(this.resizeTimeout);
+        this.resizeTimeout = setTimeout(() => {
+            this.adjustPaginationForScreenSize();
+        }, 250);
+    }
+    
+    handleInitialLoad() {
+        // Check if we need to redirect with correct per_page parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentPerPage = parseInt(urlParams.get('per_page')) || 3;
+        const optimalPerPage = this.getOptimalPerPage();
+        
+        // Redirect if per_page doesn't match optimal for current screen size
+        if (currentPerPage !== optimalPerPage) {
+            console.log(`Screen size requires per_page=${optimalPerPage}, but current is ${currentPerPage}. Redirecting...`);
+            this.redirectWithPerPage(optimalPerPage);
+        }
+    }
+    
+    updatePaginationIfNeeded() {
+        // Update pagination links if they exist
+        const paginationLinks = document.querySelectorAll('a[href*="page="]');
+        
+        paginationLinks.forEach(link => {
+            const url = new URL(link.href);
+            url.searchParams.set('per_page', this.currentPerPage);
+            link.href = url.toString();
+        });
+    }
+    
+    redirectWithPerPage(perPage) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentPage = parseInt(urlParams.get('page')) || 1;
+        
+        // Calculate if we need to adjust the current page number
+        const currentPerPage = parseInt(urlParams.get('per_page')) || 3;
+        
+        // If we're changing per_page, we might need to recalculate which page to show
+        // For now, just go to page 1 with the new per_page to avoid complexity
+        const newUrl = new URL(window.location);
+        newUrl.searchParams.set('per_page', perPage);
+        
+        // Only redirect to page 1 if we're not already there or per_page is different
+        if (currentPage > 1 || currentPerPage !== perPage) {
+            newUrl.searchParams.set('page', 1);
+        }
+        
+        // Only redirect if URL actually changed
+        if (newUrl.toString() !== window.location.toString()) {
+            window.location.href = newUrl.toString();
+        }
+    }
+    
+    getCurrentBreakpoint() {
+        const width = window.innerWidth;
+        if (width < 768) return 'mobile';
+        if (width < 1200) return 'medium';
+        return 'desktop';
+    }
+}
+
+// Global responsive pagination manager
+let responsivePaginationManager;
+
 // Initialize any additional functionality when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Japan\'s History blog initialized with loading animations');
@@ -822,6 +948,10 @@ document.addEventListener('DOMContentLoaded', function() {
         addSearchLoading();
         addPageTransition();
         enhancePostCards();
+        
+        // Initialize responsive pagination (handles screen size-based per_page)
+        responsivePaginationManager = new ResponsivePaginationManager();
+        window.responsivePaginationManager = responsivePaginationManager;
         
         // Initialize seamless pagination
         paginationManager = new PaginationManager();

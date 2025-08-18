@@ -93,7 +93,7 @@
         <span class="text-muted me-3">Page {{ page }} of {{ total_pages }}</span>
         <div class="btn-group" role="group">
             {% if has_prev %}
-            <a href="{{ url_for('main.index', page=prev_page) }}" class="btn btn-outline-primary">
+            <a href="{{ url_for('main.index', page=prev_page, per_page=per_page) }}" class="btn btn-outline-primary">
                 <i class="fas fa-chevron-left"></i>
             </a>
             {% else %}
@@ -103,7 +103,7 @@
             {% endif %}
             
             {% if has_next %}
-            <a href="{{ url_for('main.index', page=next_page) }}" class="btn btn-outline-primary">
+            <a href="{{ url_for('main.index', page=next_page, per_page=per_page) }}" class="btn btn-outline-primary">
                 <i class="fas fa-chevron-right"></i>
             </a>
             {% else %}
