@@ -333,12 +333,12 @@ class PostModel:
     def create_post(title, content, excerpt, image_filename, post_type, slug, image_position_x='center', image_position_y='center', category_id=None, status='published', publish_date=None, template_id=None):
         """Create a new post."""
         db = get_db()
-        db.execute('''
+        cursor = db.execute('''
             INSERT INTO posts (title, content, excerpt, image_filename, image_position_x, image_position_y, post_type, slug, category_id, status, publish_date, template_id)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (title, content, excerpt, image_filename, image_position_x, image_position_y, post_type, slug, category_id, status, publish_date, template_id))
         db.commit()
-        return db.lastrowid
+        return cursor.lastrowid
     
     @staticmethod
     def update_post(post_id, title, content, excerpt, image_filename, post_type, slug, image_position_x='center', image_position_y='center', category_id=None, status='published', publish_date=None, template_id=None):
