@@ -22,7 +22,45 @@ def admin_dashboard():
     posts = PostModel.get_articles_paginated(page=1, per_page=20)  # Get recent posts with category info
     stats = AdminModel.get_post_statistics()
     categories = CategoryModel.get_all_categories()
-    return render_template('admin/dashboard.html', posts=posts, stats=stats, categories=categories)
+    
+    # Get recent activity for dashboard widgets
+    recent_activities = ActivityLogModel.get_recent_activities(limit=10)
+    recent_contact_messages = ContactModel.get_recent_messages(limit=5)
+    
+    # Calculate content quality statistics
+    all_posts = PostModel.get_articles_paginated(page=1, per_page=1000)  # Get all posts for quality analysis
+    quality_stats = {
+        'no_image': 0,
+        'short_description': 0,
+        'short_content': 0,
+        'good': 0,
+        'total': len(all_posts)
+    }
+    
+    for post in all_posts:
+        has_warnings = False
+        if not post['image_filename']:
+            quality_stats['no_image'] += 1
+            has_warnings = True
+        if not post['excerpt'] or len(post['excerpt']) < 50:
+            quality_stats['short_description'] += 1
+            has_warnings = True
+        # Strip HTML tags for content length check
+        import re
+        clean_content = re.sub('<[^<]+?>', '', post['content'] or '')
+        if len(clean_content) < 200:
+            quality_stats['short_content'] += 1
+            has_warnings = True
+        if not has_warnings:
+            quality_stats['good'] += 1
+    
+    return render_template('admin/dashboard.html', 
+                         posts=posts, 
+                         stats=stats, 
+                         categories=categories,
+                         recent_activities=recent_activities,
+                         recent_contact_messages=recent_contact_messages,
+                         quality_stats=quality_stats)
 
 
 @admin.route('/admin/posts')

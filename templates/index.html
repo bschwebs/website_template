@@ -15,11 +15,11 @@
 <div class="row">
     <div class="col-12">
         <a href="{% if introduction_post %}{{ url_for('posts.view_post_by_slug', slug=introduction_post.slug) if introduction_post.slug else url_for('posts.view_post', post_id=introduction_post.id) }}{% else %}{{ url_for('main.articles') }}{% endif %}" class="text-decoration-none text-white">
-            <div class="jumbotron jumbotron-bg p-5 rounded mb-4 position-relative overflow-hidden d-flex align-items-end jumbotron-hover">
+            <div class="jumbotron jumbotron-bg p-5 rounded mb-4 position-relative overflow-hidden d-flex align-items-end jumbotron-hover jumbotron-enhanced observe-fade">
                 <div class="position-absolute w-100 h-100 jumbotron-overlay" style="background: linear-gradient(to bottom, rgba(45, 24, 16, 0.3) 0%, rgba(45, 24, 16, 0.8) 100%); top: 0; left: 0;"></div>
                 <div class="position-relative">
-                    <h1 class="display-4 mb-3 text-white">Japan's History</h1>
-                    <p class="lead mb-0 text-white">"From ancient tombs to modern towers, Japan’s story is one of resilience, ritual, and rebirth. Step into the chronicles of an archipelago where every era forged a new destiny."</p>
+                    <h1 class="display-4 mb-3 text-white observe-slide-left">Japan's History</h1>
+                    <p class="lead mb-0 text-white observe-slide-right">"From ancient tombs to modern towers, Japan's story is one of resilience, ritual, and rebirth. Step into the chronicles of an archipelago where every era forged a new destiny."</p>
                 </div>
             </div>
         </a>
@@ -28,13 +28,13 @@
 
 {% if featured_post %}
 <!-- Featured Post -->
-<div class="row mb-5">
+<div class="row mb-5 observe-fade">
     <div class="col-12">
         <a href="{{ url_for('posts.view_post_by_slug', slug=featured_post.slug) if featured_post.slug else url_for('posts.view_post', post_id=featured_post.id) }}" class="text-decoration-none">
-            <div class="card border-0 shadow-lg overflow-hidden featured-post-hover" style="height: 600px;">
+            <div class="card border-0 shadow-lg overflow-hidden featured-post-hover scale-in" style="height: 600px;">
                 {% if featured_post.image_filename %}
                 <!-- Background Image -->
-                <div class="position-absolute w-100 h-100" 
+                <div class="position-absolute w-100 h-100 image-container" 
                      style="background-image: url('{{ url_for('static', filename='uploads/' + featured_post.image_filename) }}'); 
                             background-size: cover; 
                             background-position: {{ featured_post.image_position_x|default('center') }} {{ featured_post.image_position_y|default('center') }}; 
@@ -50,7 +50,7 @@
                 
                 <!-- Featured Badge -->
                 <div class="position-absolute top-0 start-0 m-3">
-                    <span class="badge bg-warning text-dark fs-6 px-3 py-2">
+                    <span class="badge bg-warning text-dark fs-6 px-3 py-2 observe-slide-right">
                         <i class="fas fa-star me-2"></i>Featured Post
                     </span>
                 </div>
@@ -59,20 +59,20 @@
                 <div class="card-body position-relative d-flex flex-column justify-content-end text-white h-100 p-4">
                     <div class="mb-3">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <span class="badge bg-secondary fs-6 px-3 py-2">
+                            <span class="badge bg-secondary fs-6 px-3 py-2 observe-slide-left">
                                 Article
                             </span>
-                            <small class="text-light opacity-75">{{ featured_post.created_at[:10] }}</small>
+                            <small class="text-light opacity-75 observe-slide-right">{{ featured_post.created_at[:10] }}</small>
                         </div>
-                        <h1 class="card-title display-5 fw-bold text-white mb-3">{{ featured_post.title }}</h1>
+                        <h1 class="card-title display-5 fw-bold text-white mb-3 observe-fade">{{ featured_post.title }}</h1>
                         {% if featured_post.excerpt %}
-                        <p class="card-text lead text-white mb-4 opacity-90">{{ featured_post.excerpt|safe }}</p>
+                        <p class="card-text lead text-white mb-4 opacity-90 observe-fade">{{ featured_post.excerpt|safe }}</p>
                         {% else %}
-                        <p class="card-text text-white mb-4 opacity-90">{{ (featured_post.content[:200] + ('...' if featured_post.content|length > 200 else ''))|safe }}</p>
+                        <p class="card-text text-white mb-4 opacity-90 observe-fade">{{ (featured_post.content[:200] + ('...' if featured_post.content|length > 200 else ''))|safe }}</p>
                         {% endif %}
                     </div>
                     <div>
-                        <span class="btn btn-primary btn-lg px-4 py-2">
+                        <span class="btn btn-primary btn-lg px-4 py-2 observe-slide-left">
                             <i class="fas fa-arrow-right me-2"></i>Read Featured Post
                         </span>
                     </div>
@@ -84,12 +84,12 @@
 {% endif %}
 
 {% if posts %}
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex justify-content-between align-items-center mb-4 observe-slide-left">
     <h2 class="mb-0">{% if featured_post %}More Posts{% else %}Latest Posts{% endif %}</h2>
     
     <!-- Pagination Controls -->
     {% if total_pages > 1 %}
-    <div class="d-flex align-items-center">
+    <div class="d-flex align-items-center observe-slide-right">
         <span class="text-muted me-3">Page {{ page }} of {{ total_pages }}</span>
         <div class="btn-group" role="group">
             {% if has_prev %}
@@ -116,44 +116,54 @@
     {% endif %}
 </div>
 
-<div class="row g-0">
+<div class="posts-grid-enhanced" id="posts-grid">
     {% for post in posts %}
-    <div class="col-md-6 col-lg-4">
-        <div class="card post-card border-0 overflow-hidden position-relative" style="height: 400px !important; min-height: 400px !important; max-height: 400px !important;">
+    <div class="post-card-dynamic observe-fade" data-post-id="{{ post.id }}">
+        <div class="card-image">
             {% if post.image_filename %}
-            <!-- Background Image -->
-            <div class="position-absolute w-100 h-100" 
-                 style="background-image: url('{{ url_for('static', filename='uploads/' + post.image_filename) }}'); 
-                        background-size: cover; 
-                        background-position: {{ post.image_position_x|default('center') }} {{ post.image_position_y|default('center') }}; 
-                        background-repeat: no-repeat;"></div>
-            
-            <!-- Dark Overlay -->
-            <div class="position-absolute w-100 h-100 bg-dark" style="opacity: 0.4;"></div>
+            <img src="{{ url_for('static', filename='uploads/' + post.image_filename) }}" alt="{{ post.title }}" loading="lazy">
             {% else %}
-            <!-- Gradient Background if no image -->
-            <div class="position-absolute w-100 h-100" 
-                 style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
+            <div class="card-gradient-overlay"></div>
             {% endif %}
             
-            <!-- Content Overlay -->
-            <div class="card-body position-relative d-flex flex-column justify-content-end text-white h-100 p-3">
-                <div>
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="badge bg-secondary fs-6">
-                            Article
-                        </span>
-                        <small class="text-light opacity-75">{{ post.created_at[:10] }}</small>
-                    </div>
-                    <h5 class="card-title text-white fw-bold mb-2">{{ post.title }}</h5>
-                    {% if post.excerpt %}
-                    <p class="card-text text-white mb-3 opacity-90 small">{{ (post.excerpt[:80] + ('...' if post.excerpt|length > 80 else ''))|safe }}</p>
-                    {% else %}
-                    <p class="card-text text-white mb-3 opacity-90 small">{{ (post.content[:80] + ('...' if post.content|length > 80 else ''))|safe }}</p>
-                    {% endif %}
-                    <a href="{{ url_for('posts.view_post_by_slug', slug=post.slug) if post.slug else url_for('posts.view_post', post_id=post.id) }}" class="btn btn-light btn-sm">Read More</a>
-                </div>
+            <div class="category-badge {{ get_category_color_class(post.category_name if post.category_name else 'default') }}">
+                {{ post.category_name or 'Article' }}
             </div>
+            
+            <div class="reading-time">
+                <i class="fas fa-clock"></i> {{ calculate_reading_time(post.content or post.excerpt) }} min
+            </div>
+        </div>
+        
+        <div class="card-content-enhanced">
+            <h3 class="card-title-enhanced">{{ post.title }}</h3>
+            <p class="card-excerpt">{{ truncate_content_smart(post.excerpt or post.content, 120) }}</p>
+            
+            {% if post.tags %}
+            <div class="card-tags">
+                {% for tag in post.tags[:3] %}
+                <span class="card-tag">{{ tag.name }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <div class="card-meta">
+                <span class="card-date">
+                    <i class="fas fa-calendar"></i> {{ post.created_at | format_date }}
+                </span>
+            </div>
+        </div>
+        
+        <div class="card-actions">
+            <a href="{{ url_for('posts.view_post_by_slug', slug=post.slug) if post.slug else url_for('posts.view_post', post_id=post.id) }}" class="action-btn action-btn-primary">
+                <i class="fas fa-arrow-right"></i> Read Article
+            </a>
+            <button class="action-btn" onclick="sharePost('{{ post.title }}', '{{ url_for('posts.view_post_by_slug', slug=post.slug) if post.slug else url_for('posts.view_post', post_id=post.id) }}')">
+                <i class="fas fa-share"></i> Share
+            </button>
+            <button class="action-btn" onclick="toggleBookmark({{ post.id }})">
+                <i class="far fa-bookmark"></i> Save
+            </button>
         </div>
     </div>
     {% endfor %}

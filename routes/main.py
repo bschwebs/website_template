@@ -2,7 +2,7 @@
 Main routes for the Story Hub application.
 """
 from flask import Blueprint, render_template, request, flash, redirect, url_for
-from models import PostModel, TagModel, CategoryModel, ContactModel, EmailConfigModel, AboutModel
+from models import PostModel, TagModel, CategoryModel, ContactModel, EmailConfigModel, AboutModel, ActivityLogModel
 from utils import is_admin_logged_in
 from forms import ContactForm
 import smtplib
@@ -148,16 +148,44 @@ def contact():
         try:
             ContactModel.save_message(name, email, subject, message)
             
+            # Log the contact message submission
+            ActivityLogModel.log_activity(
+                admin_username='system',
+                action='Contact Message Received',
+                details=f'New contact message from {name} ({email}) - Subject: "{subject}"',
+                ip_address=request.remote_addr
+            )
+            
             # Try to send email if configured
             email_config = EmailConfigModel.get_config()
             if email_config:
                 try:
                     send_contact_email(email_config, name, email, subject, message)
+                    # Log successful email notification
+                    ActivityLogModel.log_activity(
+                        admin_username='system',
+                        action='Email Notification Sent',
+                        details=f'Contact form notification sent to admin for message from {name}',
+                        ip_address=request.remote_addr
+                    )
                     flash('Thank you for your message! We\'ll get back to you soon.', 'success')
                 except Exception as e:
-                    # Email failed but message was saved
+                    # Email failed but message was saved - log the failure
+                    ActivityLogModel.log_activity(
+                        admin_username='system',
+                        action='Email Notification Failed',
+                        details=f'Failed to send email notification for contact message from {name}: {str(e)}',
+                        ip_address=request.remote_addr
+                    )
                     flash('Thank you for your message! We\'ll get back to you soon.', 'success')
             else:
+                # No email config - log this
+                ActivityLogModel.log_activity(
+                    admin_username='system',
+                    action='Email Config Missing',
+                    details='Contact message received but no email configuration found for notifications',
+                    ip_address=request.remote_addr
+                )
                 flash('Thank you for your message! We\'ll get back to you soon.', 'success')
             
             return redirect(url_for('main.contact'))
@@ -176,38 +204,168 @@ def about():
 
 
 def send_contact_email(config, name, email, subject, message):
-    """Send contact form email."""
+    """Send contact form email notification to admin."""
+    from datetime import datetime
+    import logging
+    
+    # Set up logging for debugging
+    logging.basicConfig(level=logging.DEBUG)
+    logger = logging.getLogger(__name__)
+    
+    # Validate config object
+    if not config:
+        logger.error("Email configuration is None")
+        raise ValueError("Email configuration is None")
+    
+    # Debug: Print config attributes
+    logger.debug(f"Config object type: {type(config)}")
+    logger.debug(f"Config object attributes: {dir(config)}")
+    
+    # Check required config attributes
+    required_attrs = ['from_email', 'to_email', 'smtp_server', 'smtp_port', 'smtp_username', 'smtp_password', 'use_tls']
+    for attr in required_attrs:
+        if attr not in config:
+            logger.error(f"Config missing attribute: {attr}")
+            raise ValueError(f"Email configuration missing required attribute: {attr}")
+        
+        value = config[attr]
+        if value is None or (isinstance(value, str) and value.strip() == ''):
+            logger.error(f"Config attribute {attr} is None or empty: {value}")
+            raise ValueError(f"Email configuration attribute {attr} is None or empty")
+        
+        logger.debug(f"Config {attr}: {'***' if 'password' in attr else value}")
+    
     # Create message
-    msg = MIMEMultipart()
+    msg = MIMEMultipart('alternative')
     msg['From'] = config['from_email']
     msg['To'] = config['to_email']
-    msg['Subject'] = f"Contact Form: {subject}"
+    msg['Reply-To'] = email  # Allow direct reply to sender
+    msg['Subject'] = f"📧 New Contact Message: {subject}"
     
-    # Email body
-    body = f"""
-New contact form submission:
+    # Plain text version
+    text_body = f"""
+New Contact Form Submission - Japan's History Blog
 
-Name: {name}
-Email: {email}
-Subject: {subject}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Message:
+SENDER INFORMATION:
+👤 Name: {name}
+📧 Email: {email}
+📝 Subject: {subject}
+🕒 Received: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+MESSAGE:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 {message}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ADMIN ACTIONS:
+• View all messages: your-site.com/admin/contact-messages
+• Reply directly to this email to respond to {name}
+• Email will be sent from: {email}
 
 ---
-This message was sent via the contact form on Japan's History.
-Reply directly to this email to respond to {name} at {email}.
+This notification was sent automatically by Japan's History Blog.
+"""
+
+    # HTML version for better formatting
+    html_body = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }}
+        .container {{ max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }}
+        .header {{ background: linear-gradient(135deg, #2d1810 0%, #8b4513 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center; }}
+        .content {{ padding: 30px; }}
+        .info-row {{ margin: 15px 0; padding: 10px; background-color: #f8f9fa; border-left: 4px solid #007bff; border-radius: 4px; }}
+        .message-box {{ background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 20px; margin: 20px 0; }}
+        .footer {{ background-color: #f8f9fa; padding: 20px; border-radius: 0 0 8px 8px; text-align: center; color: #6c757d; font-size: 14px; }}
+        .btn {{ display: inline-block; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; margin: 5px; }}
+        .highlight {{ color: #8b4513; font-weight: bold; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📧 New Contact Message</h1>
+            <p>Japan's History Blog</p>
+        </div>
+        
+        <div class="content">
+            <h2>Message Details</h2>
+            
+            <div class="info-row">
+                <strong>👤 From:</strong> {name}
+            </div>
+            
+            <div class="info-row">
+                <strong>📧 Email:</strong> <a href="mailto:{email}">{email}</a>
+            </div>
+            
+            <div class="info-row">
+                <strong>📝 Subject:</strong> {subject}
+            </div>
+            
+            <div class="info-row">
+                <strong>🕒 Received:</strong> {datetime.now().strftime('%B %d, %Y at %H:%M:%S')}
+            </div>
+            
+            <div class="message-box">
+                <h3>Message Content:</h3>
+                <div style="white-space: pre-wrap; line-height: 1.6;">{message}</div>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="mailto:{email}?subject=Re: {subject}" class="btn">Reply to {name}</a>
+                <a href="#/admin/contact-messages" class="btn">View All Messages</a>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>This notification was sent automatically by your Japan's History Blog contact form.</p>
+            <p>To configure email settings, visit your <a href="#/admin/email-config">admin panel</a>.</p>
+        </div>
+    </div>
+</body>
+</html>
 """
     
-    msg.attach(MIMEText(body, 'plain'))
+    # Attach both versions
+    msg.attach(MIMEText(text_body, 'plain'))
+    msg.attach(MIMEText(html_body, 'html'))
     
     # Send email
-    server = smtplib.SMTP(config['smtp_server'], config['smtp_port'])
-    if config['use_tls']:
-        server.starttls()
-    server.login(config['smtp_username'], config['smtp_password'])
-    server.send_message(msg)
-    server.quit()
+    logger.debug(f"Connecting to SMTP server: {config['smtp_server']}:{config['smtp_port']}")
+    try:
+        server = smtplib.SMTP(config['smtp_server'], config['smtp_port'])
+        logger.debug("SMTP connection established")
+        
+        if config['use_tls']:
+            logger.debug("Starting TLS")
+            server.starttls()
+            logger.debug("TLS started successfully")
+        
+        logger.debug(f"Logging in with username: {config['smtp_username']}")
+        server.login(config['smtp_username'], config['smtp_password'])
+        logger.debug("SMTP login successful")
+        
+        logger.debug("Sending email message")
+        server.send_message(msg)
+        logger.debug("Email sent successfully")
+        
+        server.quit()
+        logger.debug("SMTP connection closed")
+        
+    except Exception as smtp_error:
+        logger.error(f"SMTP Error: {type(smtp_error).__name__}: {str(smtp_error)}")
+        if 'server' in locals():
+            try:
+                server.quit()
+            except:
+                pass
+        raise smtp_error
 
 
 # Add admin status and categories to template context

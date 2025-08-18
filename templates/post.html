@@ -59,13 +59,13 @@
 {% block content %}
 <div class="row">
     <div class="col-lg-8 mx-auto">
-        <article>
-            <div class="d-flex justify-content-between align-items-center mb-3">
+        <article class="content-container">
+            <div class="d-flex justify-content-between align-items-center mb-3 observe-slide-left">
                 <span class="badge bg-secondary fs-6">
                     Article
                 </span>
                 {% if is_admin_logged_in %}
-                <div class="dropdown">
+                <div class="dropdown observe-slide-right">
                     <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" 
                             data-bs-toggle="dropdown">
                         <i class="fas fa-ellipsis-v"></i>
@@ -88,9 +88,9 @@
                 {% endif %}
             </div>
             
-            <h1 class="mb-3">{{ post.title }}</h1>
+            <h1 class="mb-3 observe-fade">{{ post.title }}</h1>
             
-            <div class="text-muted mb-4">
+            <div class="text-muted mb-4 observe-slide-left">
                 <small>
                     <i class="fas fa-calendar me-1"></i>Published 
                     {% if post.created_at %}
@@ -107,19 +107,19 @@
             </div>
             
             {% if post.image_filename %}
-            <div class="mb-4">
+            <div class="mb-4 observe-fade">
                 <img src="{{ url_for('static', filename='uploads/' + post.image_filename) }}" 
-                     class="img-fluid rounded" alt="{{ post.title }}">
+                     class="img-fluid rounded image-loaded" alt="{{ post.title }}">
             </div>
             {% endif %}
             
-            <div class="post-content">
+            <div class="post-content observe-fade">
                 {{ post.content|safe }}
             </div>
             
             <!-- Tags -->
             {% if tags %}
-            <div class="mt-4 pt-3 border-top">
+            <div class="mt-4 pt-3 border-top observe-slide-left">
                 <h6 class="text-muted mb-2">
                     <i class="fas fa-tags me-2"></i>Tags
                 </h6>
@@ -135,7 +135,7 @@
             {% endif %}
             
             <!-- Social Sharing -->
-            <div class="mt-4 pt-3 border-top">
+            <div class="mt-4 pt-3 border-top observe-slide-right">
                 <h6 class="text-muted mb-3">Share this article:</h6>
                 <div class="d-flex flex-wrap gap-2">
                     <!-- Twitter -->

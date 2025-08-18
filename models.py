@@ -731,6 +731,12 @@ class ContactModel:
         return db.execute('SELECT * FROM contact_messages ORDER BY created_at DESC').fetchall()
     
     @staticmethod
+    def get_recent_messages(limit=5):
+        """Get recent contact messages for dashboard."""
+        db = get_db()
+        return db.execute('SELECT * FROM contact_messages ORDER BY created_at DESC LIMIT ?', (limit,)).fetchall()
+    
+    @staticmethod
     def delete_message(message_id):
         """Delete a contact message."""
         db = get_db()

@@ -105,115 +105,127 @@
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+    <nav class="navbar navbar-expand-lg fixed-top navbar-enhanced">
         <div class="container">
-            <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.index') }}">
-                <img src="{{ url_for('static', filename='img/Japanese History Blog Logo - Styled.png') }}" alt="Japan's History Logo" class="me-2" style="height: 32px; width: 32px;">
+            <a class="navbar-brand navbar-brand-enhanced d-flex align-items-center" href="{{ url_for('main.index') }}">
+                <img src="{{ url_for('static', filename='img/Japanese History Blog Logo - Styled.png') }}" 
+                     alt="Japan's History Logo" class="navbar-logo-enhanced me-3">
                 Japan's History
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            
+            <button class="navbar-toggler navbar-toggler-enhanced" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false">
                 <span class="navbar-toggler-icon"></span>
             </button>
+            
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="{{ url_for('main.articles') }}" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <a class="nav-link nav-link-enhanced dropdown-toggle" href="{{ url_for('main.articles') }}" 
+                           role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             Articles
                         </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ url_for('main.articles') }}">All Articles</a></li>
+                        <ul class="dropdown-menu dropdown-menu-enhanced dropdown-menu-end">
+                            <!-- Search Box in Articles Dropdown -->
+                            <li class="dropdown-search-container px-3 py-2">
+                                <form method="GET" action="{{ url_for('search.search_posts') }}" class="d-flex">
+                                    <input type="text" name="query" class="form-control form-control-sm dropdown-search-input" 
+                                           placeholder="Search articles..." 
+                                           value="{{ request.args.get('query', '') }}"
+                                           style="border-radius: 20px; font-size: 0.85rem;">
+                                    <button type="submit" class="btn btn-sm ms-2 dropdown-search-btn" style="border-radius: 50%; width: 32px; height: 32px; background: var(--accent-copper); color: white; border: none;">
+                                        <i class="fas fa-search" style="font-size: 0.75rem;"></i>
+                                    </button>
+                                </form>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('main.articles') }}">
+                                <i class="fas fa-list"></i>All Articles
+                            </a></li>
                             <li><hr class="dropdown-divider"></li>
                             {% if navbar_introduction_post %}
-                            <li><a class="dropdown-item" href="{{ url_for('posts.view_post_by_slug', slug=navbar_introduction_post.slug) if navbar_introduction_post.slug else url_for('posts.view_post', post_id=navbar_introduction_post.id) }}">
-                                <img src="{{ url_for('static', filename='img/Japanese History Blog Logo - Styled.png') }}" alt="Japan's History Logo" class="me-2" style="height: 16px; width: 16px;">Introduction
+                            <li><a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('posts.view_post_by_slug', slug=navbar_introduction_post.slug) if navbar_introduction_post.slug else url_for('posts.view_post', post_id=navbar_introduction_post.id) }}">
+                                <i class="fas fa-torii-gate"></i>Introduction
                             </a></li>
                             {% endif %}
                             <li><hr class="dropdown-divider"></li>
                             {% for category in categories %}
                             {% if category.slug != 'introduction' %}
-                            <li><a class="dropdown-item" href="{{ url_for('main.articles_by_category', category_slug=category.slug) }}">{{ category.name }}</a></li>
+                            <li><a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('main.articles_by_category', category_slug=category.slug) }}">
+                                <i class="fas fa-folder"></i>{{ category.name }}
+                            </a></li>
                             {% endif %}
                             {% endfor %}
                         </ul>
                     </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-ellipsis-h me-1"></i>More
+                    
+                    <li class="nav-item">
+                        <a class="nav-link nav-link-enhanced" href="{{ url_for('search.all_tags') }}">
+                            Topics
                         </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ url_for('search.all_tags') }}">
-                                <i class="fas fa-tags me-2"></i>Tags
+                    </li>
+                    
+                    <li class="nav-item dropdown">
+                        <a class="nav-link nav-link-enhanced dropdown-toggle" href="#" 
+                           role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Explore
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-enhanced dropdown-menu-end">
+                            <li><a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('main.about') }}">
+                                <i class="fas fa-user"></i>About
                             </a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('main.about') }}">
-                                <i class="fas fa-user me-2"></i>About
-                            </a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('main.contact') }}">
-                                <i class="fas fa-envelope me-2"></i>Contact
+                            <li><a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('main.contact') }}">
+                                <i class="fas fa-envelope"></i>Contact
                             </a></li>
                         </ul>
                     </li>
                 </ul>
                 
-                <!-- Search Form -->
-                <form class="d-flex me-3" method="GET" action="{{ url_for('search.search_posts') }}">
-                    <div class="input-group">
-                        <input type="text" name="query" class="form-control" placeholder="Search..." 
-                               value="{{ request.args.get('query', '') }}" style="width: 200px;">
-                        <button type="submit" class="btn btn-outline-light">
-                            <i class="fas fa-search"></i>
-                        </button>
-                    </div>
-                </form>
                 
                 <ul class="navbar-nav">
                     {% if is_admin_logged_in %}
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-cog me-1"></i>Admin
+                        <a class="nav-link nav-link-enhanced dropdown-toggle" href="#" 
+                           role="button" data-bs-toggle="dropdown">
+                            Admin
                         </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ url_for('admin.admin_dashboard') }}">
-                                <i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('admin.admin_posts') }}">
-                                <i class="fas fa-list me-2"></i>Manage Posts</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('admin.admin_categories') }}">
-                                <i class="fas fa-folder me-2"></i>Manage Categories</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('admin.admin_tags') }}">
-                                <i class="fas fa-tags me-2"></i>Manage Tags</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('admin.admin_templates') }}">
-                                <i class="fas fa-file-code me-2"></i>Post Templates</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('admin.admin_gallery') }}">
-                                <i class="fas fa-images me-2"></i>Image Gallery</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('admin.admin_backup') }}">
-                                <i class="fas fa-download me-2"></i>Backup & Export</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('admin.admin_activity_log') }}">
-                                <i class="fas fa-history me-2"></i>Activity Log</a></li>
+                        <ul class="dropdown-menu dropdown-menu-enhanced dropdown-menu-end">
+                            <li><a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('admin.admin_dashboard') }}">
+                                <i class="fas fa-tachometer-alt"></i>Dashboard
+                            </a></li>
+                            <li><a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('admin.admin_posts') }}">
+                                <i class="fas fa-list"></i>Manage Posts
+                            </a></li>
+                            <li><a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('admin.admin_categories') }}">
+                                <i class="fas fa-folder"></i>Categories
+                            </a></li>
+                            <li><a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('admin.admin_tags') }}">
+                                <i class="fas fa-tags"></i>Tags
+                            </a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ url_for('admin.admin_email_config') }}">
-                                <i class="fas fa-envelope-open-text me-2"></i>Email Config</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('admin.admin_contact_messages') }}">
-                                <i class="fas fa-inbox me-2"></i>Contact Messages</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('admin.admin_about') }}">
-                                <i class="fas fa-user me-2"></i>About Page</a></li>
+                            <li><a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('admin.admin_gallery') }}">
+                                <i class="fas fa-images"></i>Gallery
+                            </a></li>
+                            <li><a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('admin.admin_backup') }}">
+                                <i class="fas fa-download"></i>Backup
+                            </a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ url_for('admin.admin_change_password') }}">
-                                <i class="fas fa-lock me-2"></i>Change Password</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ url_for('auth.admin_logout') }}">
-                                <i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                            <li><a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('auth.admin_logout') }}">
+                                <i class="fas fa-sign-out-alt"></i>Logout
+                            </a></li>
                         </ul>
+                    </li>
+                    {% endif %}
+                    
+                    {% if is_admin_logged_in %}
+                    <li class="nav-item d-flex align-items-center">
+                        <a class="nav-cta-btn" href="{{ url_for('posts.create_post') }}">
+                            Create Post
+                        </a>
                     </li>
                     {% else %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('auth.admin_login') }}">
-                            <i class="fas fa-lock me-1"></i>Admin
-                        </a>
-                    </li>
-                    {% endif %}
-                    {% if is_admin_logged_in %}
-                    <li class="nav-item">
-                        <a class="nav-link btn btn-primary text-white ms-2" href="{{ url_for('posts.create_post') }}">
-                            <i class="fas fa-plus me-1"></i>Create Post
+                        <a class="nav-link nav-link-enhanced" href="{{ url_for('auth.admin_login') }}">
+                            Admin
                         </a>
                     </li>
                     {% endif %}
@@ -239,15 +251,109 @@
         </div>
     </main>
 
-    <footer class="bg-dark text-light py-2 mt-5 fixed-bottom">
-        <div class="container">
-            <div class="d-flex justify-content-between align-items-center">
-                <div class="d-flex align-items-center">
-                    <img src="{{ url_for('static', filename='img/Japanese History Blog Logo - Styled.png') }}" alt="Japan's History Logo" class="me-2" style="height: 24px; width: 24px;">
-                    <span>Japan's History</span>
+    <footer class="footer-enhanced">
+        <div class="footer-main">
+            <div class="container">
+                <div class="row">
+                    <!-- Brand Section -->
+                    <div class="col-lg-4 col-md-6 mb-4">
+                        <div class="footer-brand">
+                            <div class="d-flex align-items-center mb-3">
+                                <img src="{{ url_for('static', filename='img/Japanese History Blog Logo - Styled.png') }}" 
+                                     alt="Japan's History Logo" class="me-3" style="height: 40px; width: 40px; border-radius: 8px;">
+                                <h4>Japan's History</h4>
+                            </div>
+                            <p>Exploring the rich tapestry of Japanese culture, history, and traditions. From ancient customs to modern innovations, discover the stories that shaped Japan.</p>
+                            
+                            <!-- Social Links -->
+                            <div class="footer-social">
+                                <a href="#" class="social-link" title="Twitter">
+                                    <i class="fab fa-twitter"></i>
+                                </a>
+                                <a href="#" class="social-link" title="Facebook">
+                                    <i class="fab fa-facebook"></i>
+                                </a>
+                                <a href="#" class="social-link" title="Instagram">
+                                    <i class="fab fa-instagram"></i>
+                                </a>
+                                <a href="#" class="social-link" title="YouTube">
+                                    <i class="fab fa-youtube"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Links -->
+                    <div class="col-lg-2 col-md-6 mb-4">
+                        <div class="footer-links">
+                            <h5>Explore</h5>
+                            <ul>
+                                <li><a href="{{ url_for('main.articles') }}">
+                                    <i class="fas fa-scroll"></i>All Articles
+                                </a></li>
+                                <li><a href="{{ url_for('search.all_tags') }}">
+                                    <i class="fas fa-tags"></i>Topics
+                                </a></li>
+                                <li><a href="{{ url_for('main.about') }}">
+                                    <i class="fas fa-user"></i>About
+                                </a></li>
+                                <li><a href="{{ url_for('main.contact') }}">
+                                    <i class="fas fa-envelope"></i>Contact
+                                </a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- Categories -->
+                    <div class="col-lg-3 col-md-6 mb-4">
+                        <div class="footer-links">
+                            <h5>Categories</h5>
+                            <ul>
+                                {% for category in categories[:5] %}
+                                <li><a href="{{ url_for('main.articles_by_category', category_slug=category.slug) }}">
+                                    <i class="fas fa-folder"></i>{{ category.name }}
+                                </a></li>
+                                {% endfor %}
+                                {% if categories|length > 5 %}
+                                <li><a href="{{ url_for('main.articles') }}">
+                                    <i class="fas fa-ellipsis-h"></i>View All
+                                </a></li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- Newsletter -->
+                    <div class="col-lg-3 col-md-6 mb-4">
+                        <div class="footer-links">
+                            <h5>Stay Updated</h5>
+                            <p style="color: var(--text-warm); opacity: 0.8; font-size: 0.9rem;">
+                                Get the latest articles about Japanese history and culture delivered to your inbox.
+                            </p>
+                            <form class="newsletter-form">
+                                <input type="email" class="newsletter-input" placeholder="Your email address" required>
+                                <button type="submit" class="newsletter-btn">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <small>&copy; 2025 Brandon Schwebs</small>
+            </div>
+        </div>
+        
+        <!-- Footer Bottom -->
+        <div class="footer-bottom">
+            <div class="container">
+                <div class="footer-bottom-content">
+                    <p class="footer-copyright">
+                        &copy; 2025 Brandon Schwebs. All rights reserved.
+                    </p>
+                    <div class="footer-legal">
+                        <a href="#">Privacy Policy</a>
+                        <a href="#">Terms of Service</a>
+                        <a href="#">Sitemap</a>
+                    </div>
                 </div>
             </div>
         </div>

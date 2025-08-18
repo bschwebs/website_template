@@ -81,54 +81,54 @@
                 </div>
                 
                 <!-- Search Results -->
-                <div class="row g-0">
+                <div class="posts-grid-enhanced" id="search-results-grid">
                     {% for post in posts %}
-                    <div class="col-md-6 col-lg-4">
-                        <div class="card post-card border-0 overflow-hidden position-relative" style="height: 400px !important; min-height: 400px !important; max-height: 400px !important;">
+                    <div class="post-card-dynamic observe-fade" data-post-id="{{ post.id }}">
+                        <div class="card-image">
                             {% if post.image_filename %}
-                            <!-- Background Image -->
-                            <div class="position-absolute w-100 h-100" 
-                                 style="background-image: url('{{ url_for('static', filename='uploads/' + post.image_filename) }}'); 
-                                        background-size: cover; 
-                                        background-position: {{ post.image_position_x|default('center') }} {{ post.image_position_y|default('center') }}; 
-                                        background-repeat: no-repeat;"></div>
-                            
-                            <!-- Dark Overlay -->
-                            <div class="position-absolute w-100 h-100 bg-dark" style="opacity: 0.4;"></div>
+                            <img src="{{ url_for('static', filename='uploads/' + post.image_filename) }}" alt="{{ post.title }}" loading="lazy">
                             {% else %}
-                            <!-- Gradient Background if no image -->
-                            <div class="position-absolute w-100 h-100" 
-                                 style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
+                            <div class="card-gradient-overlay"></div>
                             {% endif %}
                             
-                            <!-- Content Overlay -->
-                            <div class="card-body position-relative d-flex flex-column justify-content-end text-white h-100 p-3">
-                                <div>
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <span class="badge bg-secondary fs-6">
-                                            Article
-                                        </span>
-                                        <small class="text-light opacity-75">{{ post.created_at[:10] }}</small>
-                                    </div>
-                                    <h5 class="card-title text-white fw-bold mb-2">{{ post.title }}</h5>
-                                    {% if post.excerpt %}
-                                    <p class="card-text text-white mb-3 opacity-90 small">{{ (post.excerpt[:80] + ('...' if post.excerpt|length > 80 else ''))|safe }}</p>
-                                    {% else %}
-                                    <p class="card-text text-white mb-3 opacity-90 small">{{ (post.content[:80] + ('...' if post.content|length > 80 else ''))|safe }}</p>
-                                    {% endif %}
-                                    
-                                    <!-- Tags -->
-                                    {% if post.tag_names %}
-                                    <div class="mb-2">
-                                        {% for tag_name in post.tag_names.split(', ') %}
-                                        <span class="badge bg-light text-dark me-1 small">{{ tag_name }}</span>
-                                        {% endfor %}
-                                    </div>
-                                    {% endif %}
-                                    
-                                    <a href="{{ url_for('posts.view_post_by_slug', slug=post.slug) if post.slug else url_for('posts.view_post', post_id=post.id) }}" class="btn btn-light btn-sm">Read More</a>
-                                </div>
+                            <div class="category-badge {{ get_category_color_class(post.category_name if post.category_name else 'default') }}">
+                                {{ post.category_name or 'Article' }}
                             </div>
+                            
+                            <div class="reading-time">
+                                <i class="fas fa-clock"></i> {{ calculate_reading_time(post.content or post.excerpt) }} min
+                            </div>
+                        </div>
+                        
+                        <div class="card-content-enhanced">
+                            <h3 class="card-title-enhanced">{{ post.title }}</h3>
+                            <p class="card-excerpt">{{ truncate_content_smart(post.excerpt or post.content, 120) }}</p>
+                            
+                            {% if post.tag_names %}
+                            <div class="card-tags">
+                                {% for tag_name in post.tag_names.split(', ')[:3] %}
+                                <span class="card-tag">{{ tag_name }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            
+                            <div class="card-meta">
+                                <span class="card-date">
+                                    <i class="fas fa-calendar"></i> {{ post.created_at | format_date }}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="card-actions">
+                            <a href="{{ url_for('posts.view_post_by_slug', slug=post.slug) if post.slug else url_for('posts.view_post', post_id=post.id) }}" class="action-btn action-btn-primary">
+                                <i class="fas fa-arrow-right"></i> Read Article
+                            </a>
+                            <button class="action-btn" onclick="sharePost('{{ post.title }}', '{{ url_for('posts.view_post_by_slug', slug=post.slug) if post.slug else url_for('posts.view_post', post_id=post.id) }}')">
+                                <i class="fas fa-share"></i> Share
+                            </button>
+                            <button class="action-btn" onclick="toggleBookmark({{ post.id }})">
+                                <i class="far fa-bookmark"></i> Save
+                            </button>
                         </div>
                     </div>
                     {% endfor %}
