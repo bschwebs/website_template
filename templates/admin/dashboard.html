@@ -2,6 +2,42 @@
 
 {% block title %}Admin Dashboard | Japan's History{% endblock %}
 
+{% block extra_css %}
+<style>
+.activity-timeline .activity-item:last-child {
+    border-bottom: none !important;
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+.message-item:last-child {
+    border-bottom: none !important;
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+.activity-icon i, .message-icon i {
+    font-size: 1.1em;
+}
+
+.btn-xs {
+    padding: 0.15rem 0.4rem;
+    font-size: 0.75rem;
+    line-height: 1.2;
+    border-radius: 0.2rem;
+}
+
+.activity-content, .message-content {
+    min-width: 0; /* Allows text truncation to work properly */
+}
+
+.card-body {
+    max-height: 400px;
+    overflow-y: auto;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="d-flex align-items-center" style="font-size: 2rem;"><img src="{{ url_for('static', filename='img/Japanese History Blog Logo - Styled.png') }}" alt="Japan's History Logo" class="me-2" style="height: 48px; width: 48px;">Admin Dashboard</h1>
@@ -31,6 +67,9 @@
                         <a href="{{ url_for('admin.admin_tags') }}" class="btn btn-outline-primary btn-sm">
                             <i class="fas fa-tags me-1"></i>Manage Tags
                         </a>
+                        <a href="{{ url_for('admin.admin_gallery') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-images me-1"></i>Gallery
+                        </a>
                         <a href="{{ url_for('admin.admin_email_config') }}" class="btn btn-outline-primary btn-sm">
                             <i class="fas fa-envelope-open-text me-1"></i>Email Config
                         </a>
@@ -39,6 +78,9 @@
                         </a>
                         <a href="{{ url_for('admin.admin_about') }}" class="btn btn-outline-primary btn-sm">
                             <i class="fas fa-user me-1"></i>About Page
+                        </a>
+                        <a href="{{ url_for('admin.admin_backup') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-download me-1"></i>Backup
                         </a>
                         <a href="{{ url_for('admin.admin_change_password') }}" class="btn btn-outline-primary btn-sm">
                             <i class="fas fa-lock me-1"></i>Change Password
@@ -52,7 +94,7 @@
 
 <!-- Statistics Cards -->
 <div class="row mb-4">
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="card bg-primary text-white">
             <div class="card-body">
                 <div class="d-flex align-items-center">
@@ -67,7 +109,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="card bg-info text-white">
             <div class="card-body">
                 <div class="d-flex align-items-center">
@@ -82,7 +124,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="card bg-success text-white">
             <div class="card-body">
                 <div class="d-flex align-items-center">
@@ -94,6 +136,136 @@
                         <i class="fas fa-folder fa-2x"></i>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card {% if quality_stats.total > 0 and (quality_stats.good / quality_stats.total) >= 0.8 %}bg-success{% elif quality_stats.total > 0 and (quality_stats.good / quality_stats.total) >= 0.5 %}bg-warning{% else %}bg-danger{% endif %} text-white">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h5 class="card-title">Quality Score</h5>
+                        <h2 class="mb-0">
+                            {% if quality_stats.total > 0 %}
+                                {{ ((quality_stats.good / quality_stats.total) * 100)|round(0)|int }}%
+                            {% else %}
+                                0%
+                            {% endif %}
+                        </h2>
+                        <small class="opacity-75">{{ quality_stats.good }} of {{ quality_stats.total }} posts</small>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-check-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Activity Dashboard -->
+<div class="row mb-4">
+    <!-- Recent Activity -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-history me-2"></i>Recent Activity</h5>
+                <a href="{{ url_for('admin.admin_activity_log') }}" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-eye me-1"></i>View All
+                </a>
+            </div>
+            <div class="card-body">
+                {% if recent_activities %}
+                    <div class="activity-timeline">
+                        {% for activity in recent_activities %}
+                        <div class="activity-item border-bottom pb-3 mb-3">
+                            <div class="d-flex align-items-start">
+                                <div class="activity-icon me-3 mt-1">
+                                    {% if 'Contact Message' in activity.action %}
+                                        <i class="fas fa-envelope text-info"></i>
+                                    {% elif 'Login' in activity.action %}
+                                        <i class="fas fa-sign-in-alt text-success"></i>
+                                    {% elif 'Email' in activity.action %}
+                                        <i class="fas fa-mail-bulk text-primary"></i>
+                                    {% elif 'Post' in activity.action %}
+                                        <i class="fas fa-file-alt text-warning"></i>
+                                    {% else %}
+                                        <i class="fas fa-cog text-secondary"></i>
+                                    {% endif %}
+                                </div>
+                                <div class="activity-content flex-grow-1">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <strong class="activity-action">{{ activity.action }}</strong>
+                                            <div class="activity-user text-muted small">
+                                                by {{ activity.admin_username }}
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">
+                                            {{ activity.timestamp[:16] }}
+                                        </small>
+                                    </div>
+                                    {% if activity.details %}
+                                    <div class="activity-details text-muted small mt-1">
+                                        {{ activity.details[:100] }}{% if activity.details|length > 100 %}...{% endif %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center">No recent activity found.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Contact Messages -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-inbox me-2"></i>Recent Messages</h5>
+                <a href="{{ url_for('admin.admin_contact_messages') }}" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-eye me-1"></i>View All
+                </a>
+            </div>
+            <div class="card-body">
+                {% if recent_contact_messages %}
+                    {% for message in recent_contact_messages %}
+                    <div class="message-item border-bottom pb-3 mb-3">
+                        <div class="d-flex align-items-start">
+                            <div class="message-icon me-3 mt-1">
+                                <i class="fas fa-user-circle text-primary fa-lg"></i>
+                            </div>
+                            <div class="message-content flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <strong class="message-subject">{{ message.subject }}</strong>
+                                        <div class="message-from text-muted small">
+                                            from {{ message.name }} ({{ message.email }})
+                                        </div>
+                                    </div>
+                                    <small class="text-muted">
+                                        {{ message.created_at[:16] }}
+                                    </small>
+                                </div>
+                                <div class="message-preview text-muted small mt-1">
+                                    {{ message.message[:80] }}{% if message.message|length > 80 %}...{% endif %}
+                                </div>
+                                <div class="message-actions mt-2">
+                                    <a href="mailto:{{ message.email }}?subject=Re: {{ message.subject }}" class="btn btn-outline-primary btn-xs">
+                                        <i class="fas fa-reply me-1"></i>Reply
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center">No recent contact messages.</p>
+                {% endif %}
             </div>
         </div>
     </div>

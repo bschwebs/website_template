@@ -1,54 +1,244 @@
 {% extends "base.html" %}
 
-{% block title %}All Tags | Japan's History{% endblock %}
+{% block title %}Discover Tags | Japan's History{% endblock %}
 
 {% block content %}
-<div class="row">
+<!-- Hero Section -->
+<div class="row mb-4">
     <div class="col-12">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1 class="d-flex align-items-center" style="font-size: 2rem;"><img src="{{ url_for('static', filename='img/Japanese History Blog Logo - Styled.png') }}" alt="Japan's History Logo" class="me-2" style="height: 48px; width: 48px;">All Tags</h1>
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="d-flex align-items-center mb-2" style="font-size: 2.5rem;">
+                    <img src="{{ url_for('static', filename='img/Japanese History Blog Logo - Styled.png') }}" 
+                         alt="Japan's History Logo" class="me-3" style="height: 56px; width: 56px;">
+                    Explore Topics
+                </h1>
+                <p class="text-muted mb-0">Discover articles by topic and explore the rich tapestry of Japanese culture</p>
+            </div>
             <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">
                 <i class="fas fa-home me-1"></i>Back to Home
             </a>
         </div>
-        
-        {% if tags %}
-            <div class="row">
-                {% for tag in tags %}
-                <div class="col-md-6 col-lg-4 mb-3">
-                    <div class="card h-100">
-                        <div class="card-body d-flex justify-content-between align-items-center">
-                            <div>
-                                <h5 class="card-title mb-1">
-                                    <a href="{{ url_for('search.posts_by_tag', slug=tag.slug) }}" 
-                                       class="text-decoration-none"
-                                       style="color: var(--accent-copper) !important;">
-                                        <i class="fas fa-tag me-2"></i>{{ tag.name }}
-                                    </a>
-                                </h5>
-                                <p class="card-text text-muted mb-0">
-                                    {{ tag.post_count }} post{{ 's' if tag.post_count != 1 else '' }}
-                                </p>
-                            </div>
-                            <a href="{{ url_for('search.posts_by_tag', slug=tag.slug) }}" 
-                               class="btn btn-outline-primary btn-sm">
-                                View Posts
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <div class="text-center py-5">
-                <i class="fas fa-tags fa-3x text-muted mb-3"></i>
-                <h4>No tags found</h4>
-                <p class="text-muted">No tags have been created yet. Tags will appear here when posts are tagged.</p>
-                {% if is_admin_logged_in %}
-                <a href="{{ url_for('posts.create_post') }}" class="btn btn-primary">Create First Post</a>
-                {% endif %}
-            </div>
-        {% endif %}
     </div>
 </div>
+
+{% if tags %}
+<!-- Tag Statistics -->
+<div class="tag-stats">
+    <div class="row text-center">
+        <div class="col-md-3 col-6">
+            <div class="stat-item">
+                <span class="stat-number">{{ tags|length }}</span>
+                <div class="stat-label">Total Tags</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-item">
+                <span class="stat-number">{{ tags|sum(attribute='post_count') }}</span>
+                <div class="stat-label">Tagged Posts</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-item">
+                <span class="stat-number">{{ tags|selectattr('post_count', 'gt', 5)|list|length }}</span>
+                <div class="stat-label">Popular Tags</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-item">
+                <span class="stat-number">{{ (tags|map(attribute='post_count')|max) if tags else 0 }}</span>
+                <div class="stat-label">Most Used</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Interactive Tag Cloud -->
+<div class="tag-cloud-container">
+    <h3 class="text-center mb-4" style="color: var(--text-warm); font-family: 'Cinzel', serif;">
+        <i class="fas fa-cloud me-2"></i>Tag Cloud
+    </h3>
+    <div class="tag-cloud" id="tagCloud">
+        {% for tag in tags %}
+        <a href="{{ url_for('search.posts_by_tag', slug=tag.slug) }}" 
+           class="tag-cloud-item tag-size-{{ get_tag_size(tag.post_count, tags|map(attribute='post_count')|max) }}" 
+           data-count="{{ tag.post_count }}"
+           title="{{ tag.post_count }} post{{ 's' if tag.post_count != 1 else '' }}">
+            {{ tag.name }}
+        </a>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Search and Filter Section -->
+<div class="tag-search-container">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <div class="position-relative">
+                <input type="text" 
+                       class="form-control tag-search-input" 
+                       id="tagSearch" 
+                       placeholder="🔍 Search tags..."
+                       autocomplete="off">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="tag-filters">
+                <button class="filter-btn active" data-filter="all">All</button>
+                <button class="filter-btn" data-filter="popular">Popular</button>
+                <button class="filter-btn" data-filter="recent">Recent</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Popular Tags Sidebar -->
+{% set popular_tags = tags|sort(attribute='post_count', reverse=true)|take(5) %}
+{% if popular_tags %}
+<div class="popular-tags-section">
+    <h4 class="popular-tags-title">
+        <i class="fas fa-fire me-2"></i>Trending Topics
+    </h4>
+    {% for tag in popular_tags %}
+    <div class="popular-tag-item">
+        <span class="popular-tag-rank">#{{ loop.index }}</span>
+        <a href="{{ url_for('search.posts_by_tag', slug=tag.slug) }}" 
+           class="popular-tag-name text-decoration-none" 
+           style="color: inherit;">{{ tag.name }}</a>
+        <span class="popular-tag-count">{{ tag.post_count }}</span>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Enhanced Tag Cards Grid -->
+<div class="row" id="tagsGrid">
+    {% for tag in tags %}
+    <div class="col-lg-4 col-md-6 mb-4 tag-card-wrapper tag-appear" 
+         data-tag-name="{{ tag.name|lower }}" 
+         data-tag-count="{{ tag.post_count }}"
+         data-tag-popularity="{{ 'popular' if tag.post_count > 5 else 'normal' }}">
+        <div class="tag-card-enhanced">
+            {% if tag.post_count > 10 %}
+            <div class="trending-badge">
+                <i class="fas fa-fire"></i> Hot
+            </div>
+            {% endif %}
+            
+            <div class="tag-card-body">
+                <div class="tag-card-header">
+                    <div class="d-flex align-items-center">
+                        <div class="tag-icon">
+                            <i class="fas fa-{{ get_tag_icon(tag.name) }}"></i>
+                        </div>
+                        <h5 class="tag-name">{{ tag.name }}</h5>
+                    </div>
+                    <span class="tag-count">{{ tag.post_count }}</span>
+                </div>
+                
+                <div class="tag-description">
+                    {{ get_tag_description(tag.name, tag.post_count) }}
+                </div>
+                
+                <div class="tag-card-footer">
+                    <a href="{{ url_for('search.posts_by_tag', slug=tag.slug) }}" 
+                       class="tag-explore-btn">
+                        <i class="fas fa-arrow-right me-2"></i>
+                        Explore {{ tag.post_count }} post{{ 's' if tag.post_count != 1 else '' }}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% else %}
+<!-- Empty State -->
+<div class="text-center py-5">
+    <div class="mb-4">
+        <i class="fas fa-tags fa-5x text-muted mb-3" style="opacity: 0.3;"></i>
+    </div>
+    <h3 class="mb-3">No Tags Discovered Yet</h3>
+    <p class="text-muted mb-4 lead">Tags help organize and categorize content. They'll appear here as articles are tagged with relevant topics.</p>
+    {% if is_admin_logged_in %}
+    <a href="{{ url_for('posts.create_post') }}" class="btn btn-primary btn-lg">
+        <i class="fas fa-plus me-2"></i>Create Your First Post
+    </a>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- JavaScript for Enhanced Interactions -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Tag search functionality
+    const searchInput = document.getElementById('tagSearch');
+    const tagCards = document.querySelectorAll('.tag-card-wrapper');
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    
+    // Search functionality
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            
+            tagCards.forEach(card => {
+                const tagName = card.dataset.tagName;
+                const isVisible = tagName.includes(searchTerm);
+                
+                if (isVisible) {
+                    card.style.display = '';
+                    card.classList.add('tag-appear');
+                } else {
+                    card.style.display = 'none';
+                    card.classList.remove('tag-appear');
+                }
+            });
+        });
+    }
+    
+    // Filter functionality
+    filterButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Update active button
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            
+            const filter = this.dataset.filter;
+            
+            tagCards.forEach(card => {
+                let isVisible = true;
+                
+                if (filter === 'popular') {
+                    isVisible = card.dataset.tagPopularity === 'popular';
+                } else if (filter === 'recent') {
+                    // For demo, show last 6 tags as "recent"
+                    const cardIndex = Array.from(tagCards).indexOf(card);
+                    isVisible = cardIndex < 6;
+                }
+                
+                if (isVisible) {
+                    card.style.display = '';
+                    card.classList.add('tag-appear');
+                } else {
+                    card.style.display = 'none';
+                    card.classList.remove('tag-appear');
+                }
+            });
+        });
+    });
+    
+    // Add click handlers for tag cloud items
+    const tagCloudItems = document.querySelectorAll('.tag-cloud-item');
+    tagCloudItems.forEach(item => {
+        item.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-3px) scale(1.05) rotate(2deg)';
+        });
+        
+        item.addEventListener('mouseleave', function() {
+            this.style.transform = '';
+        });
+    });
+});
+</script>
 {% endblock %}

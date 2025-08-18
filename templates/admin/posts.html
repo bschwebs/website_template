@@ -15,6 +15,79 @@
     </div>
 </div>
 
+<!-- Content Quality Overview -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Content Quality Overview</h5>
+            </div>
+            <div class="card-body">
+                {% if posts %}
+                    {% set quality_stats = {'no_image': 0, 'short_description': 0, 'short_content': 0, 'good': 0, 'total': posts|length} %}
+                    {% for post in posts %}
+                        {% set has_warnings = false %}
+                        {% if not post.image_filename %}
+                            {% set _ = quality_stats.update({'no_image': quality_stats.no_image + 1}) %}
+                            {% set has_warnings = true %}
+                        {% endif %}
+                        {% if not post.excerpt or post.excerpt|length < 50 %}
+                            {% set _ = quality_stats.update({'short_description': quality_stats.short_description + 1}) %}
+                            {% set has_warnings = true %}
+                        {% endif %}
+                        {% if post.content|striptags|length < 200 %}
+                            {% set _ = quality_stats.update({'short_content': quality_stats.short_content + 1}) %}
+                            {% set has_warnings = true %}
+                        {% endif %}
+                        {% if not has_warnings %}
+                            {% set _ = quality_stats.update({'good': quality_stats.good + 1}) %}
+                        {% endif %}
+                    {% endfor %}
+                    
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <div class="h4 text-success mb-1">{{ quality_stats.good }}</div>
+                                <div class="small text-muted">Good Quality</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <div class="h4 text-warning mb-1">{{ quality_stats.no_image }}</div>
+                                <div class="small text-muted">Missing Images</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <div class="h4 text-warning mb-1">{{ quality_stats.short_description }}</div>
+                                <div class="small text-muted">Short Descriptions</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <div class="h4 text-warning mb-1">{{ quality_stats.short_content }}</div>
+                                <div class="small text-muted">Short Content</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <div class="progress" style="height: 8px;">
+                            {% set good_percentage = (quality_stats.good / quality_stats.total * 100)|round(1) %}
+                            <div class="progress-bar bg-success" style="width: {{ good_percentage }}%"></div>
+                        </div>
+                        <div class="small text-muted mt-1">
+                            {{ good_percentage }}% of posts have good quality content
+                        </div>
+                    </div>
+                {% else %}
+                    <p class="text-muted mb-0">No posts to analyze.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Quick Links -->
 <div class="row mb-4">
     <div class="col-12">
@@ -30,27 +103,33 @@
                 <!-- Desktop: Always visible, Mobile: Collapsible -->
                 <div class="collapse d-md-block" id="quickLinksCollapsePosts">
                     <div class="d-flex flex-wrap gap-2">
-                    <a href="{{ url_for('admin.admin_dashboard') }}" class="btn btn-outline-primary btn-sm">
-                        <i class="fas fa-tachometer-alt me-1"></i>Dashboard
-                    </a>
-                    <a href="{{ url_for('admin.admin_categories') }}" class="btn btn-outline-primary btn-sm">
-                        <i class="fas fa-folder me-1"></i>Manage Categories
-                    </a>
-                    <a href="{{ url_for('admin.admin_tags') }}" class="btn btn-outline-primary btn-sm">
-                        <i class="fas fa-tags me-1"></i>Manage Tags
-                    </a>
-                    <a href="{{ url_for('admin.admin_email_config') }}" class="btn btn-outline-primary btn-sm">
-                        <i class="fas fa-envelope-open-text me-1"></i>Email Config
-                    </a>
-                    <a href="{{ url_for('admin.admin_contact_messages') }}" class="btn btn-outline-primary btn-sm">
-                        <i class="fas fa-inbox me-1"></i>Contact Messages
-                    </a>
-                    <a href="{{ url_for('admin.admin_about') }}" class="btn btn-outline-primary btn-sm">
-                        <i class="fas fa-user me-1"></i>About Page
-                    </a>
-                    <a href="{{ url_for('admin.admin_change_password') }}" class="btn btn-outline-primary btn-sm">
-                        <i class="fas fa-lock me-1"></i>Change Password
-                    </a>
+                        <a href="{{ url_for('admin.admin_dashboard') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                        </a>
+                        <a href="{{ url_for('admin.admin_categories') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-folder me-1"></i>Manage Categories
+                        </a>
+                        <a href="{{ url_for('admin.admin_tags') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-tags me-1"></i>Manage Tags
+                        </a>
+                        <a href="{{ url_for('admin.admin_gallery') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-images me-1"></i>Gallery
+                        </a>
+                        <a href="{{ url_for('admin.admin_email_config') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-envelope-open-text me-1"></i>Email Config
+                        </a>
+                        <a href="{{ url_for('admin.admin_contact_messages') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-inbox me-1"></i>Contact Messages
+                        </a>
+                        <a href="{{ url_for('admin.admin_about') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-user me-1"></i>About Page
+                        </a>
+                        <a href="{{ url_for('admin.admin_backup') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-download me-1"></i>Backup
+                        </a>
+                        <a href="{{ url_for('admin.admin_change_password') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-lock me-1"></i>Change Password
+                        </a>
                     </div>
                 </div>
             </div>
@@ -75,6 +154,7 @@
                                     <th>Category</th>
                                     <th>Featured</th>
                                     <th>Excerpt</th>
+                                    <th>Quality</th>
                                     <th>Created</th>
                                     <th>Updated</th>
                                     <th>Actions</th>
@@ -125,6 +205,32 @@
                                             {{ post.excerpt[:50] }}{% if post.excerpt|length > 50 %}...{% endif %}
                                         {% else %}
                                             <span class="text-muted">No excerpt</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% set quality_warnings = [] %}
+                                        {% if not post.image_filename %}
+                                            {% set _ = quality_warnings.append('No Image') %}
+                                        {% endif %}
+                                        {% if not post.excerpt or post.excerpt|length < 50 %}
+                                            {% set _ = quality_warnings.append('Short Description') %}
+                                        {% endif %}
+                                        {% if post.content|striptags|length < 200 %}
+                                            {% set _ = quality_warnings.append('Short Content') %}
+                                        {% endif %}
+                                        
+                                        {% if quality_warnings %}
+                                            <div class="d-flex flex-column gap-1">
+                                                {% for warning in quality_warnings %}
+                                                <span class="badge bg-warning text-dark small" style="font-size: 0.65rem;">
+                                                    <i class="fas fa-exclamation-triangle me-1"></i>{{ warning }}
+                                                </span>
+                                                {% endfor %}
+                                            </div>
+                                        {% else %}
+                                            <span class="badge bg-success small" style="font-size: 0.65rem;">
+                                                <i class="fas fa-check-circle me-1"></i>Good
+                                            </span>
                                         {% endif %}
                                     </td>
                                     <td>{{ post.created_at[:10] }}</td>
