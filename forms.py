@@ -2,7 +2,7 @@
 Flask-WTF forms for the Story Hub application.
 """
 from flask_wtf import FlaskForm
-from wtforms import StringField, TextAreaField, SelectField, SubmitField, FileField, PasswordField, ValidationError, DateTimeLocalField, RadioField, HiddenField, MultipleFileField
+from wtforms import StringField, TextAreaField, SelectField, SubmitField, FileField, PasswordField, ValidationError, DateTimeLocalField, RadioField, HiddenField, MultipleFileField, IntegerField, BooleanField
 from wtforms.validators import DataRequired, Length, Email, Optional, URL
 from wtforms.widgets import TextArea
 from markupsafe import Markup
@@ -142,3 +142,21 @@ class BulkDeleteForm(FlaskForm):
     """Form for bulk deletion operations (CSRF protection)."""
     selected_items = HiddenField('Selected Items', validators=[DataRequired()])
     submit = SubmitField('Delete Selected')
+
+
+class SocialLinkForm(FlaskForm):
+    """Form for creating and editing social media links."""
+    name = StringField('Name', validators=[DataRequired(), Length(max=100)], 
+                      render_kw={"placeholder": "e.g., Twitter, Facebook"})
+    url = StringField('URL', validators=[DataRequired(), URL(), Length(max=500)], 
+                     render_kw={"placeholder": "https://twitter.com/yourusername"})
+    icon_class = StringField('Icon Class', validators=[DataRequired(), Length(max=100)], 
+                            render_kw={"placeholder": "fab fa-twitter"})
+    display_order = IntegerField('Display Order', validators=[Optional()], default=0)
+    is_active = BooleanField('Active', default=True)
+    submit = SubmitField('Save Social Link')
+
+
+class DeleteSocialLinkForm(FlaskForm):
+    """Form for deleting social media links (CSRF protection)."""
+    submit = SubmitField('Delete')

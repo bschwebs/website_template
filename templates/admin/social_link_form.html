@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit' if is_edit else 'Create' }} Social Link - Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-2">{{ 'Edit' if is_edit else 'Create' }} Social Link</h1>
+                    <p class="text-muted">{{ 'Update the' if is_edit else 'Add a new' }} social media link for the footer</p>
+                </div>
+                <a href="{{ url_for('admin.admin_social_links') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Social Links
+                </a>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-share-alt me-2"></i>
+                        Social Link Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="social-link-form">
+                        {{ form.hidden_tag() }}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.name.label(class="form-label") }}
+                                    {{ form.name(class="form-control") }}
+                                    {% if form.name.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.name.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">Display name for the social media platform</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.display_order.label(class="form-label") }}
+                                    {{ form.display_order(class="form-control", min="0") }}
+                                    {% if form.display_order.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.display_order.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">Order in which the link appears (lower numbers first)</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.url.label(class="form-label") }}
+                            {{ form.url(class="form-control") }}
+                            {% if form.url.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.url.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Full URL to your social media profile</div>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.icon_class.label(class="form-label") }}
+                            <div class="input-group">
+                                {{ form.icon_class(class="form-control") }}
+                                <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#iconModal">
+                                    <i class="fas fa-search"></i> Browse
+                                </button>
+                            </div>
+                            {% if form.icon_class.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.icon_class.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">FontAwesome icon class (e.g., fab fa-twitter, fab fa-facebook)</div>
+                            
+                            <!-- Icon Preview -->
+                            <div class="mt-2">
+                                <small class="text-muted">Preview:</small>
+                                <div class="icon-preview ms-2 d-inline-block">
+                                    <i id="icon-preview" class="{{ social_link.icon_class if social_link else 'fas fa-question' }}" 
+                                       style="font-size: 1.5rem; color: var(--accent-copper);"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-check">
+                                {{ form.is_active(class="form-check-input") }}
+                                {{ form.is_active.label(class="form-check-label") }}
+                                {% if form.is_active.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.is_active.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                                <div class="form-text">Only active links will be displayed in the footer</div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('admin.admin_social_links') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> {{ 'Update' if is_edit else 'Create' }} Social Link
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Icon Browser Modal -->
+<div class="modal fade" id="iconModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Choose an Icon</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-2" id="icon-grid">
+                    <!-- Popular social media icons -->
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <button type="button" class="btn btn-outline-secondary w-100 icon-option" data-icon="fab fa-twitter">
+                            <i class="fab fa-twitter"></i><br><small>Twitter</small>
+                        </button>
+                    </div>
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <button type="button" class="btn btn-outline-secondary w-100 icon-option" data-icon="fab fa-facebook">
+                            <i class="fab fa-facebook"></i><br><small>Facebook</small>
+                        </button>
+                    </div>
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <button type="button" class="btn btn-outline-secondary w-100 icon-option" data-icon="fab fa-instagram">
+                            <i class="fab fa-instagram"></i><br><small>Instagram</small>
+                        </button>
+                    </div>
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <button type="button" class="btn btn-outline-secondary w-100 icon-option" data-icon="fab fa-youtube">
+                            <i class="fab fa-youtube"></i><br><small>YouTube</small>
+                        </button>
+                    </div>
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <button type="button" class="btn btn-outline-secondary w-100 icon-option" data-icon="fab fa-linkedin">
+                            <i class="fab fa-linkedin"></i><br><small>LinkedIn</small>
+                        </button>
+                    </div>
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <button type="button" class="btn btn-outline-secondary w-100 icon-option" data-icon="fab fa-github">
+                            <i class="fab fa-github"></i><br><small>GitHub</small>
+                        </button>
+                    </div>
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <button type="button" class="btn btn-outline-secondary w-100 icon-option" data-icon="fab fa-tiktok">
+                            <i class="fab fa-tiktok"></i><br><small>TikTok</small>
+                        </button>
+                    </div>
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <button type="button" class="btn btn-outline-secondary w-100 icon-option" data-icon="fab fa-discord">
+                            <i class="fab fa-discord"></i><br><small>Discord</small>
+                        </button>
+                    </div>
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <button type="button" class="btn btn-outline-secondary w-100 icon-option" data-icon="fab fa-telegram">
+                            <i class="fab fa-telegram"></i><br><small>Telegram</small>
+                        </button>
+                    </div>
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <button type="button" class="btn btn-outline-secondary w-100 icon-option" data-icon="fab fa-whatsapp">
+                            <i class="fab fa-whatsapp"></i><br><small>WhatsApp</small>
+                        </button>
+                    </div>
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <button type="button" class="btn btn-outline-secondary w-100 icon-option" data-icon="fab fa-reddit">
+                            <i class="fab fa-reddit"></i><br><small>Reddit</small>
+                        </button>
+                    </div>
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <button type="button" class="btn btn-outline-secondary w-100 icon-option" data-icon="fab fa-pinterest">
+                            <i class="fab fa-pinterest"></i><br><small>Pinterest</small>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const iconClassInput = document.getElementById('icon_class');
+    const iconPreview = document.getElementById('icon-preview');
+    
+    // Update icon preview when input changes
+    iconClassInput.addEventListener('input', function() {
+        updateIconPreview(this.value);
+    });
+    
+    // Handle icon selection from modal
+    document.querySelectorAll('.icon-option').forEach(button => {
+        button.addEventListener('click', function() {
+            const iconClass = this.dataset.icon;
+            iconClassInput.value = iconClass;
+            updateIconPreview(iconClass);
+            bootstrap.Modal.getInstance(document.getElementById('iconModal')).hide();
+        });
+    });
+    
+    function updateIconPreview(iconClass) {
+        if (iconClass.trim()) {
+            iconPreview.className = iconClass;
+        } else {
+            iconPreview.className = 'fas fa-question';
+        }
+    }
+});
+</script>
+
+<style>
+.icon-option {
+    padding: 15px 10px;
+    min-height: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon-option i {
+    font-size: 1.5rem;
+    margin-bottom: 5px;
+}
+
+.icon-option:hover {
+    background-color: var(--bs-primary);
+    color: white;
+}
+
+.icon-preview {
+    padding: 10px;
+    background: rgba(var(--bs-primary-rgb), 0.1);
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+</style>
+{% endblock %}

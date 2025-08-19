@@ -15,6 +15,16 @@
 {% block og_title %}{% if query %}Search Results for "{{ query }}"{% else %}Search Posts{% endif %} - Story Hub{% endblock %}
 {% block og_description %}{% if query %}Find posts about "{{ query }}" on Japan's History. Search through our collection of articles.{% else %}Search through our collection of articles on Japan's History.{% endif %}{% endblock %}
 
+{% block breadcrumb %}
+{% set breadcrumbs = [
+    {'title': 'Search', 'url': url_for('search.search_posts'), 'icon': 'fas fa-search'}
+] %}
+{% if query %}
+    {% set breadcrumbs = breadcrumbs + [{'title': 'Results for "' + query + '"', 'url': '', 'icon': 'fas fa-list'}] %}
+{% endif %}
+{{ super() }}
+{% endblock %}
+
 {% block content %}
 <div class="row">
     <div class="col-12">
@@ -29,17 +39,98 @@
             </h1>
         </div>
         
-        <!-- Search Form -->
+        <!-- Search Form with Advanced Filters -->
         <div class="card mb-4">
             <div class="card-body">
-                <form method="GET" action="{{ url_for('search.search_posts') }}">
-                    <div class="input-group">
+                <form method="GET" action="{{ url_for('search.search_posts') }}" id="advanced-search-form">
+                    <!-- Main search input -->
+                    <div class="input-group mb-3">
                         <input type="text" name="query" class="form-control form-control-lg" 
                                placeholder="Search posts..." value="{{ query or '' }}">
                         <button type="submit" class="btn btn-primary btn-lg">
                             <i class="fas fa-search"></i> Search
                         </button>
                     </div>
+                    
+                    <!-- Advanced Filters Toggle -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" 
+                                data-bs-toggle="collapse" data-bs-target="#advanced-filters" 
+                                aria-expanded="false" aria-controls="advanced-filters">
+                            <i class="fas fa-filter"></i> Advanced Filters
+                        </button>
+                        {% if category_filter or tag_filter or date_from or date_to %}
+                        <div class="text-muted small">
+                            <i class="fas fa-info-circle"></i> Filters applied
+                            <a href="{{ url_for('search.search_posts', query=query) }}" class="btn btn-sm btn-outline-danger ms-2">
+                                <i class="fas fa-times"></i> Clear Filters
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Advanced Filters Panel -->
+                    <div class="collapse {% if category_filter or tag_filter or date_from or date_to %}show{% endif %}" id="advanced-filters">
+                        <div class="row g-3 p-3 bg-light rounded">
+                            <!-- Category Filter -->
+                            <div class="col-md-3">
+                                <label for="category" class="form-label small">Category</label>
+                                <select name="category" id="category" class="form-select form-select-sm">
+                                    <option value="">All Categories</option>
+                                    {% for category in categories %}
+                                    <option value="{{ category.slug }}" 
+                                            {% if category_filter == category.slug %}selected{% endif %}>
+                                        {{ category.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <!-- Tag Filter -->
+                            <div class="col-md-3">
+                                <label for="tag" class="form-label small">Tag</label>
+                                <select name="tag" id="tag" class="form-select form-select-sm">
+                                    <option value="">All Tags</option>
+                                    {% for tag in popular_tags %}
+                                    <option value="{{ tag.slug }}" 
+                                            {% if tag_filter == tag.slug %}selected{% endif %}>
+                                        {{ tag.name }} ({{ tag.post_count }})
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <!-- Date From -->
+                            <div class="col-md-2">
+                                <label for="date_from" class="form-label small">From Date</label>
+                                <input type="date" name="date_from" id="date_from" 
+                                       class="form-control form-control-sm" 
+                                       value="{{ date_from }}">
+                            </div>
+                            
+                            <!-- Date To -->
+                            <div class="col-md-2">
+                                <label for="date_to" class="form-label small">To Date</label>
+                                <input type="date" name="date_to" id="date_to" 
+                                       class="form-control form-control-sm" 
+                                       value="{{ date_to }}">
+                            </div>
+                            
+                            <!-- Sort By -->
+                            <div class="col-md-2">
+                                <label for="sort_by" class="form-label small">Sort By</label>
+                                <select name="sort_by" id="sort_by" class="form-select form-select-sm">
+                                    <option value="relevance" {% if sort_by == 'relevance' %}selected{% endif %}>Relevance</option>
+                                    <option value="date_desc" {% if sort_by == 'date_desc' %}selected{% endif %}>Newest First</option>
+                                    <option value="date_asc" {% if sort_by == 'date_asc' %}selected{% endif %}>Oldest First</option>
+                                    <option value="title" {% if sort_by == 'title' %}selected{% endif %}>Title A-Z</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Hidden field to preserve per_page -->
+                    <input type="hidden" name="per_page" value="{{ per_page }}">
                 </form>
             </div>
         </div>
@@ -58,7 +149,7 @@
                     {% if total_pages > 1 %}
                     <div class="btn-group" role="group">
                         {% if has_prev %}
-                        <a href="{{ url_for('search.search_posts', query=query, page=prev_page, per_page=per_page) }}" class="btn btn-outline-primary">
+                        <a href="{{ url_for('search.search_posts', query=query, page=prev_page, per_page=per_page, category=category_filter, tag=tag_filter, date_from=date_from, date_to=date_to, sort_by=sort_by) }}" class="btn btn-outline-primary">
                             <i class="fas fa-chevron-left"></i>
                         </a>
                         {% else %}
@@ -68,7 +159,7 @@
                         {% endif %}
                         
                         {% if has_next %}
-                        <a href="{{ url_for('search.search_posts', query=query, page=next_page, per_page=per_page) }}" class="btn btn-outline-primary">
+                        <a href="{{ url_for('search.search_posts', query=query, page=next_page, per_page=per_page, category=category_filter, tag=tag_filter, date_from=date_from, date_to=date_to, sort_by=sort_by) }}" class="btn btn-outline-primary">
                             <i class="fas fa-chevron-right"></i>
                         </a>
                         {% else %}
@@ -139,7 +230,7 @@
                 <div class="d-flex justify-content-center mt-4">
                     <div class="d-flex align-items-center">
                         {% if has_prev %}
-                        <a href="{{ url_for('search.search_posts', query=query, page=prev_page, per_page=per_page) }}" class="btn btn-primary me-2">
+                        <a href="{{ url_for('search.search_posts', query=query, page=prev_page, per_page=per_page, category=category_filter, tag=tag_filter, date_from=date_from, date_to=date_to, sort_by=sort_by) }}" class="btn btn-primary me-2">
                             <i class="fas fa-chevron-left me-1"></i>Previous
                         </a>
                         {% endif %}
@@ -147,7 +238,7 @@
                         <span class="mx-3 text-muted">Page {{ page }} of {{ total_pages }}</span>
                         
                         {% if has_next %}
-                        <a href="{{ url_for('search.search_posts', query=query, page=next_page, per_page=per_page) }}" class="btn btn-primary ms-2">
+                        <a href="{{ url_for('search.search_posts', query=query, page=next_page, per_page=per_page, category=category_filter, tag=tag_filter, date_from=date_from, date_to=date_to, sort_by=sort_by) }}" class="btn btn-primary ms-2">
                             Next<i class="fas fa-chevron-right ms-1"></i>
                         </a>
                         {% endif %}

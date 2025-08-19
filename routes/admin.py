@@ -2,8 +2,9 @@
 Admin routes for the Story Hub application.
 """
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app, jsonify, send_file, make_response
-from models import PostModel, AdminModel, TagModel, CategoryModel, EmailConfigModel, ContactModel, AboutModel, PostTemplateModel, ImageGalleryModel, ActivityLogModel
-from forms import DeleteForm, CategoryForm, DeleteCategoryForm, ChangePasswordForm, AboutForm, PostTemplateForm, ImageGalleryForm, ImageEditForm, ImageSearchForm, BulkDeleteForm
+from flask_wtf.csrf import validate_csrf
+from models import PostModel, AdminModel, TagModel, CategoryModel, EmailConfigModel, ContactModel, AboutModel, PostTemplateModel, ImageGalleryModel, ActivityLogModel, SocialLinksModel
+from forms import DeleteForm, CategoryForm, DeleteCategoryForm, ChangePasswordForm, AboutForm, PostTemplateForm, ImageGalleryForm, ImageEditForm, ImageSearchForm, BulkDeleteForm, SocialLinkForm, DeleteSocialLinkForm
 from utils import admin_required, delete_file, save_uploaded_file
 import os
 import json
@@ -958,3 +959,154 @@ def admin_activity_log():
                          total_pages=total_pages,
                          search_query=search_query,
                          total_activities=total_activities)
+
+
+@admin.route('/admin/social-links')
+@admin_required
+def admin_social_links():
+    """Manage social media links."""
+    social_links = SocialLinksModel.get_all_social_links()
+    delete_form = DeleteSocialLinkForm()
+    return render_template('admin/social_links.html', 
+                         social_links=social_links, 
+                         delete_form=delete_form)
+
+
+@admin.route('/admin/social-links/create', methods=['GET', 'POST'])
+@admin_required
+def create_social_link():
+    """Create a new social media link."""
+    form = SocialLinkForm()
+    
+    if form.validate_on_submit():
+        try:
+            SocialLinksModel.create_social_link(
+                name=form.name.data,
+                url=form.url.data,
+                icon_class=form.icon_class.data,
+                display_order=form.display_order.data,
+                is_active=form.is_active.data
+            )
+            
+            # Log activity
+            admin_username = session.get('admin_user', 'Unknown')
+            ActivityLogModel.log_activity(
+                admin_username=admin_username,
+                action=f'Created social link: {form.name.data}',
+                details=f'Name: {form.name.data}, URL: {form.url.data}, Icon: {form.icon_class.data}'
+            )
+            
+            flash(f'Social link "{form.name.data}" created successfully!', 'success')
+            return redirect(url_for('admin.admin_social_links'))
+            
+        except Exception as e:
+            flash(f'Error creating social link: {str(e)}', 'error')
+    
+    return render_template('admin/social_link_form.html', 
+                         form=form,
+                         social_link=None, 
+                         is_edit=False)
+
+
+@admin.route('/admin/social-links/<int:link_id>/edit', methods=['GET', 'POST'])
+@admin_required
+def edit_social_link(link_id):
+    """Edit an existing social media link."""
+    social_link = SocialLinksModel.get_social_link_by_id(link_id)
+    if not social_link:
+        flash('Social link not found.', 'error')
+        return redirect(url_for('admin.admin_social_links'))
+    
+    form = SocialLinkForm(obj=social_link)
+    
+    if form.validate_on_submit():
+        try:
+            SocialLinksModel.update_social_link(
+                link_id=link_id,
+                name=form.name.data,
+                url=form.url.data,
+                icon_class=form.icon_class.data,
+                display_order=form.display_order.data,
+                is_active=form.is_active.data
+            )
+            
+            # Log activity
+            admin_username = session.get('admin_user', 'Unknown')
+            ActivityLogModel.log_activity(
+                admin_username=admin_username,
+                action=f'Updated social link: {form.name.data}',
+                details=f'ID: {link_id}, Name: {form.name.data}, URL: {form.url.data}, Icon: {form.icon_class.data}'
+            )
+            
+            flash(f'Social link "{form.name.data}" updated successfully!', 'success')
+            return redirect(url_for('admin.admin_social_links'))
+            
+        except Exception as e:
+            flash(f'Error updating social link: {str(e)}', 'error')
+    
+    return render_template('admin/social_link_form.html', 
+                         form=form,
+                         social_link=social_link, 
+                         is_edit=True)
+
+
+@admin.route('/admin/social-links/<int:link_id>/delete', methods=['POST'])
+@admin_required
+def delete_social_link(link_id):
+    """Delete a social media link."""
+    form = DeleteSocialLinkForm()
+    social_link = SocialLinksModel.get_social_link_by_id(link_id)
+    
+    if not social_link:
+        flash('Social link not found.', 'error')
+        return redirect(url_for('admin.admin_social_links'))
+    
+    if form.validate_on_submit():
+        try:
+            SocialLinksModel.delete_social_link(link_id)
+            
+            # Log activity
+            admin_username = session.get('admin_user', 'Unknown')
+            ActivityLogModel.log_activity(
+                admin_username=admin_username,
+                action=f'Deleted social link: {social_link["name"]}',
+                details=f'ID: {link_id}, Name: {social_link["name"]}'
+            )
+            
+            flash(f'Social link "{social_link["name"]}" deleted successfully!', 'success')
+            
+        except Exception as e:
+            flash(f'Error deleting social link: {str(e)}', 'error')
+    else:
+        flash('Invalid form submission.', 'error')
+    
+    return redirect(url_for('admin.admin_social_links'))
+
+
+@admin.route('/admin/social-links/reorder', methods=['POST'])
+@admin_required
+def reorder_social_links():
+    """Reorder social media links."""
+    try:
+        # Validate CSRF token for AJAX requests
+        validate_csrf(request.headers.get('X-CSRFToken'))
+        
+        data = request.get_json()
+        if not data or 'orders' not in data:
+            return jsonify({'success': False, 'message': 'Invalid data'}), 400
+        
+        # Update display orders
+        SocialLinksModel.reorder_social_links(data['orders'])
+        
+        # Log activity
+        admin_username = session.get('admin_user', 'Unknown')
+        ActivityLogModel.log_activity(
+            admin_username=admin_username,
+            action='Reordered social media links',
+            details=f'New order: {data["orders"]}'
+        )
+        
+        return jsonify({'success': True, 'message': 'Social links reordered successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500

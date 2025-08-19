@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+
+{% block title %}Social Media Links - Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-2">Social Media Links</h1>
+            <p class="text-muted">Manage social media links displayed in the footer</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('admin.create_social_link') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Add Social Link
+            </a>
+            <a href="{{ url_for('admin.admin_dashboard') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    {% if social_links %}
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-share-alt me-2"></i>
+                Social Links ({{ social_links|length }})
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="social-links-table">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="30px">
+                                <i class="fas fa-grip-vertical text-muted" title="Drag to reorder"></i>
+                            </th>
+                            <th>Preview</th>
+                            <th>Name</th>
+                            <th>URL</th>
+                            <th>Icon Class</th>
+                            <th>Order</th>
+                            <th>Status</th>
+                            <th width="120px">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sortable-links">
+                        {% for link in social_links %}
+                        <tr data-link-id="{{ link.id }}" class="sortable-row">
+                            <td class="drag-handle">
+                                <i class="fas fa-grip-vertical text-muted"></i>
+                            </td>
+                            <td>
+                                <div class="social-preview">
+                                    <i class="{{ link.icon_class }}" style="font-size: 1.2rem; color: var(--accent-copper);"></i>
+                                </div>
+                            </td>
+                            <td>
+                                <strong>{{ link.name }}</strong>
+                            </td>
+                            <td>
+                                <a href="{{ link.url }}" target="_blank" class="text-decoration-none">
+                                    {{ link.url[:50] }}{% if link.url|length > 50 %}...{% endif %}
+                                    <i class="fas fa-external-link-alt ms-1 small"></i>
+                                </a>
+                            </td>
+                            <td>
+                                <code class="small">{{ link.icon_class }}</code>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">{{ link.display_order }}</span>
+                            </td>
+                            <td>
+                                {% if link.is_active %}
+                                <span class="badge bg-success">Active</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ url_for('admin.edit_social_link', link_id=link.id) }}" 
+                                       class="btn btn-outline-primary" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-outline-danger" 
+                                            onclick="confirmDelete('{{ link.name }}', {{ link.id }})" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="fas fa-share-alt fa-3x text-muted mb-3"></i>
+        <h4>No Social Links</h4>
+        <p class="text-muted">Add social media links to display them in the footer.</p>
+        <a href="{{ url_for('admin.create_social_link') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add First Social Link
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the social link "<span id="delete-link-name"></span>"?</p>
+                <p class="text-muted small">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="POST" id="delete-form" style="display: inline;">
+                    {{ delete_form.hidden_tag() }}
+                    {{ delete_form.submit(class="btn btn-danger") }}
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmDelete(linkName, linkId) {
+    document.getElementById('delete-link-name').textContent = linkName;
+    document.getElementById('delete-form').action = `/admin/social-links/${linkId}/delete`;
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+
+// Make table sortable for reordering
+document.addEventListener('DOMContentLoaded', function() {
+    const tbody = document.getElementById('sortable-links');
+    if (tbody) {
+        // Simple drag and drop implementation
+        let draggedElement = null;
+        
+        tbody.addEventListener('dragstart', function(e) {
+            if (e.target.closest('.sortable-row')) {
+                draggedElement = e.target.closest('.sortable-row');
+                e.dataTransfer.effectAllowed = 'move';
+            }
+        });
+        
+        tbody.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        });
+        
+        tbody.addEventListener('drop', function(e) {
+            e.preventDefault();
+            if (draggedElement && e.target.closest('.sortable-row')) {
+                const targetRow = e.target.closest('.sortable-row');
+                if (targetRow !== draggedElement) {
+                    tbody.insertBefore(draggedElement, targetRow.nextSibling);
+                    updateOrder();
+                }
+            }
+        });
+        
+        // Make rows draggable
+        tbody.querySelectorAll('.sortable-row').forEach(row => {
+            row.draggable = true;
+        });
+        
+        function updateOrder() {
+            const orders = {};
+            tbody.querySelectorAll('.sortable-row').forEach((row, index) => {
+                const linkId = row.dataset.linkId;
+                orders[linkId] = index + 1;
+            });
+            
+            fetch('/admin/social-links/reorder', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name=csrf-token]').getAttribute('content')
+                },
+                body: JSON.stringify({ orders: orders })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update display order badges
+                    tbody.querySelectorAll('.sortable-row').forEach((row, index) => {
+                        const badge = row.querySelector('.badge.bg-secondary');
+                        if (badge) badge.textContent = index + 1;
+                    });
+                }
+            })
+            .catch(error => console.error('Error updating order:', error));
+        }
+    }
+});
+</script>
+
+<style>
+.sortable-row {
+    cursor: move;
+}
+
+.sortable-row:hover {
+    background-color: rgba(0,0,0,0.02);
+}
+
+.drag-handle {
+    cursor: grab;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+.social-preview {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(var(--bs-primary-rgb), 0.1);
+    border-radius: 8px;
+}
+</style>
+{% endblock %}

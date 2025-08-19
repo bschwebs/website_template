@@ -2,6 +2,13 @@
 
 {% block title %}Discover Tags | Japan's History{% endblock %}
 
+{% block breadcrumb %}
+{% set breadcrumbs = [
+    {'title': 'Topics', 'url': '', 'icon': 'fas fa-tags'}
+] %}
+{{ super() }}
+{% endblock %}
+
 {% block content %}
 <!-- Hero Section -->
 <div class="row mb-4">
