@@ -1207,28 +1207,52 @@ class RecentlyViewedManager {
     }
     
     trackCurrentPost() {
-        // Check if we're on a post page
+        // Check if we're on a post page (primary method)
         const postMeta = document.querySelector('meta[property="og:type"][content="article"]');
-        if (!postMeta) return;
+        let postData = null;
         
-        // Get post information
-        const postTitle = document.querySelector('meta[property="og:title"]')?.content;
-        const postUrl = document.querySelector('meta[property="og:url"]')?.content || window.location.href;
-        const postImage = document.querySelector('meta[property="og:image"]')?.content;
-        const postDescription = document.querySelector('meta[property="og:description"]')?.content;
+        if (postMeta) {
+            // Get post information from meta tags
+            const postTitle = document.querySelector('meta[property="og:title"]')?.content;
+            const postUrl = document.querySelector('meta[property="og:url"]')?.content || window.location.href;
+            const postImage = document.querySelector('meta[property="og:image"]')?.content;
+            const postDescription = document.querySelector('meta[property="og:description"]')?.content;
+            
+            if (postTitle && postUrl) {
+                postData = {
+                    title: postTitle,
+                    url: postUrl,
+                    image: postImage,
+                    description: postDescription,
+                    viewedAt: new Date().toISOString(),
+                    id: this.generatePostId(postUrl)
+                };
+            }
+        } else {
+            // Fallback method: detect post pages by URL pattern or page structure
+            const isPostPage = window.location.pathname.match(/\/posts\/[^\/]+$/);
+            if (isPostPage) {
+                const pageTitle = document.title;
+                const h1Element = document.querySelector('h1');
+                const imgElement = document.querySelector('article img, .post-content img');
+                const excerptElement = document.querySelector('.post-content p');
+                
+                if (pageTitle && h1Element) {
+                    postData = {
+                        title: h1Element.textContent.trim(),
+                        url: window.location.href,
+                        image: imgElement?.src,
+                        description: excerptElement?.textContent.substring(0, 200),
+                        viewedAt: new Date().toISOString(),
+                        id: this.generatePostId(window.location.href)
+                    };
+                }
+            }
+        }
         
-        if (!postTitle || !postUrl) return;
-        
-        const postData = {
-            title: postTitle,
-            url: postUrl,
-            image: postImage,
-            description: postDescription,
-            viewedAt: new Date().toISOString(),
-            id: this.generatePostId(postUrl)
-        };
-        
-        this.addToRecentlyViewed(postData);
+        if (postData) {
+            this.addToRecentlyViewed(postData);
+        }
     }
     
     generatePostId(url) {
@@ -1270,13 +1294,12 @@ class RecentlyViewedManager {
         // Check if sidebar already exists
         if (document.querySelector(this.sidebarSelector)) return;
         
-        // Only show sidebar on certain pages (not on the current post page)
-        const isPostPage = document.querySelector('meta[property="og:type"][content="article"]');
-        const isHomePage = window.location.pathname === '/';
-        const isArticlesPage = window.location.pathname.includes('/articles');
-        const isSearchPage = window.location.pathname.includes('/search');
+        // Show sidebar on all non-admin pages
+        const isAdminPage = window.location.pathname.startsWith('/admin');
+        const isEditPage = window.location.pathname.includes('/edit') || window.location.pathname.includes('/create');
         
-        if (!isHomePage && !isArticlesPage && !isSearchPage) return;
+        // Don't show on admin pages or editing pages
+        if (isAdminPage || isEditPage) return;
         
         // Create sidebar HTML
         const sidebarHtml = `
@@ -1301,6 +1324,14 @@ class RecentlyViewedManager {
         
         // Add to page
         document.body.insertAdjacentHTML('beforeend', sidebarHtml);
+        
+        // Add entrance animation
+        setTimeout(() => {
+            const sidebar = document.querySelector(this.sidebarSelector);
+            if (sidebar) {
+                sidebar.style.transition = 'right 0.3s ease';
+            }
+        }, 100);
     }
     
     updateSidebar() {
