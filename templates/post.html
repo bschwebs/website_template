@@ -56,6 +56,17 @@
 </script>
 {% endblock %}
 
+{% block breadcrumb %}
+{% set breadcrumbs = [
+    {'title': 'Articles', 'url': url_for('main.articles'), 'icon': 'fas fa-newspaper'}
+] %}
+{% if category %}
+    {% set breadcrumbs = breadcrumbs + [{'title': category.name, 'url': url_for('main.articles_by_category', category_slug=category.slug), 'icon': 'fas fa-folder'}] %}
+{% endif %}
+{% set breadcrumbs = breadcrumbs + [{'title': post.title, 'url': '', 'icon': 'fas fa-file-alt'}] %}
+{{ super() }}
+{% endblock %}
+
 {% block content %}
 <div class="row">
     <div class="col-lg-8 mx-auto">

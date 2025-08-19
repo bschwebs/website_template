@@ -2,7 +2,7 @@
 Main routes for the Story Hub application.
 """
 from flask import Blueprint, render_template, request, flash, redirect, url_for
-from models import PostModel, TagModel, CategoryModel, ContactModel, EmailConfigModel, AboutModel, ActivityLogModel
+from models import PostModel, TagModel, CategoryModel, ContactModel, EmailConfigModel, AboutModel, ActivityLogModel, SocialLinksModel
 from utils import is_admin_logged_in
 from forms import ContactForm
 import smtplib
@@ -387,8 +387,12 @@ def inject_template_vars():
     # Get introduction post for navbar
     introduction_post = PostModel.get_introduction_post()
     
+    # Get active social links for footer
+    social_links = SocialLinksModel.get_active_social_links()
+    
     return {
         'is_admin_logged_in': is_admin_logged_in(),
         'categories': categories_with_articles,
-        'navbar_introduction_post': introduction_post
+        'navbar_introduction_post': introduction_post,
+        'social_links': social_links
     }

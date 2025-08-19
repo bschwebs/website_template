@@ -63,6 +63,8 @@
     </script>
     {% endblock %}
     
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     
@@ -201,6 +203,9 @@
                             <li><a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('admin.admin_tags') }}">
                                 <i class="fas fa-tags"></i>Tags
                             </a></li>
+                            <li><a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('admin.admin_social_links') }}">
+                                <i class="fas fa-share-alt"></i>Social Links
+                            </a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('admin.admin_gallery') }}">
                                 <i class="fas fa-images"></i>Gallery
@@ -247,6 +252,34 @@
                 {% endif %}
             {% endwith %}
 
+            <!-- Breadcrumb Navigation -->
+            {% block breadcrumb %}
+            {% if breadcrumbs %}
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb breadcrumb-enhanced">
+                    <li class="breadcrumb-item">
+                        <a href="{{ url_for('main.index') }}" class="breadcrumb-link">
+                            <i class="fas fa-home"></i> Home
+                        </a>
+                    </li>
+                    {% for breadcrumb in breadcrumbs %}
+                    {% if loop.last %}
+                    <li class="breadcrumb-item active" aria-current="page">
+                        <i class="{{ breadcrumb.icon }}"></i> {{ breadcrumb.title }}
+                    </li>
+                    {% else %}
+                    <li class="breadcrumb-item">
+                        <a href="{{ breadcrumb.url }}" class="breadcrumb-link">
+                            <i class="{{ breadcrumb.icon }}"></i> {{ breadcrumb.title }}
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+                </ol>
+            </nav>
+            {% endif %}
+            {% endblock %}
+
             {% block content %}{% endblock %}
         </div>
     </main>
@@ -266,20 +299,15 @@
                             <p>Exploring the rich tapestry of Japanese culture, history, and traditions. From ancient customs to modern innovations, discover the stories that shaped Japan.</p>
                             
                             <!-- Social Links -->
+                            {% if social_links %}
                             <div class="footer-social">
-                                <a href="#" class="social-link" title="Twitter">
-                                    <i class="fab fa-twitter"></i>
+                                {% for link in social_links %}
+                                <a href="{{ link.url }}" class="social-link" title="{{ link.name }}" target="_blank" rel="noopener noreferrer">
+                                    <i class="{{ link.icon_class }}"></i>
                                 </a>
-                                <a href="#" class="social-link" title="Facebook">
-                                    <i class="fab fa-facebook"></i>
-                                </a>
-                                <a href="#" class="social-link" title="Instagram">
-                                    <i class="fab fa-instagram"></i>
-                                </a>
-                                <a href="#" class="social-link" title="YouTube">
-                                    <i class="fab fa-youtube"></i>
-                                </a>
+                                {% endfor %}
                             </div>
+                            {% endif %}
                         </div>
                     </div>
                     

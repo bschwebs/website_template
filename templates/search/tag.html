@@ -64,6 +64,14 @@
 </script>
 {% endblock %}
 
+{% block breadcrumb %}
+{% set breadcrumbs = [
+    {'title': 'Topics', 'url': url_for('search.all_tags'), 'icon': 'fas fa-tags'},
+    {'title': tag.name, 'url': '', 'icon': 'fas fa-tag'}
+] %}
+{{ super() }}
+{% endblock %}
+
 {% block content %}
 <div class="row">
     <div class="col-12">

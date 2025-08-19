@@ -2,6 +2,16 @@
 
 {% block title %}Articles | Japan's History{% endblock %}
 
+{% block breadcrumb %}
+{% set breadcrumbs = [
+    {'title': 'Articles', 'url': url_for('main.articles'), 'icon': 'fas fa-newspaper'}
+] %}
+{% if category %}
+    {% set breadcrumbs = breadcrumbs + [{'title': category.name, 'url': '', 'icon': 'fas fa-folder'}] %}
+{% endif %}
+{{ super() }}
+{% endblock %}
+
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>

@@ -936,6 +936,489 @@ class ResponsivePaginationManager {
 // Global responsive pagination manager
 let responsivePaginationManager;
 
+/**
+ * Instant Search Manager
+ * Handles live search suggestions and quick results
+ */
+class InstantSearchManager {
+    constructor() {
+        this.searchInputs = [];
+        this.suggestionDropdowns = [];
+        this.debounceTimeout = null;
+        this.currentRequest = null;
+        this.isVisible = false;
+        
+        this.init();
+    }
+    
+    init() {
+        // Find all search inputs
+        this.searchInputs = document.querySelectorAll('input[name="query"]');
+        
+        this.searchInputs.forEach((input, index) => {
+            this.initializeSearchInput(input, index);
+        });
+    }
+    
+    initializeSearchInput(input, index) {
+        // Create suggestion dropdown for this input
+        const dropdown = this.createSuggestionDropdown(input, index);
+        this.suggestionDropdowns[index] = dropdown;
+        
+        // Add event listeners
+        input.addEventListener('input', (e) => {
+            this.handleSearchInput(e, index);
+        });
+        
+        input.addEventListener('focus', (e) => {
+            const query = e.target.value.trim();
+            if (query.length >= 2) {
+                this.handleSearchInput(e, index);
+            }
+        });
+        
+        input.addEventListener('blur', (e) => {
+            // Delay hiding to allow click on suggestions
+            setTimeout(() => {
+                this.hideSuggestions(index);
+            }, 150);
+        });
+        
+        // Handle keyboard navigation
+        input.addEventListener('keydown', (e) => {
+            this.handleKeyboardNavigation(e, index);
+        });
+    }
+    
+    createSuggestionDropdown(input, index) {
+        const dropdown = document.createElement('div');
+        dropdown.className = 'search-suggestions-dropdown';
+        dropdown.style.cssText = `
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            max-height: 400px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        `;
+        
+        // Position relative to input
+        const container = input.closest('.input-group') || input.parentElement;
+        container.style.position = 'relative';
+        container.appendChild(dropdown);
+        
+        return dropdown;
+    }
+    
+    handleSearchInput(event, index) {
+        const query = event.target.value.trim();
+        
+        // Clear previous timeout
+        clearTimeout(this.debounceTimeout);
+        
+        if (query.length < 2) {
+            this.hideSuggestions(index);
+            return;
+        }
+        
+        // Debounce the search
+        this.debounceTimeout = setTimeout(() => {
+            this.fetchSuggestions(query, index);
+        }, 300);
+    }
+    
+    async fetchSuggestions(query, index) {
+        try {
+            // Cancel previous request
+            if (this.currentRequest) {
+                this.currentRequest.abort();
+            }
+            
+            // Create new request
+            const controller = new AbortController();
+            this.currentRequest = controller;
+            
+            const response = await fetch(`/api/search/suggestions?q=${encodeURIComponent(query)}`, {
+                signal: controller.signal,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            
+            if (!response.ok) throw new Error('Failed to fetch suggestions');
+            
+            const data = await response.json();
+            this.displaySuggestions(data.suggestions, index, query);
+            
+        } catch (error) {
+            if (error.name !== 'AbortError') {
+                console.error('Search suggestions error:', error);
+            }
+        }
+    }
+    
+    displaySuggestions(suggestions, index, query) {
+        const dropdown = this.suggestionDropdowns[index];
+        if (!dropdown) return;
+        
+        if (suggestions.length === 0) {
+            dropdown.innerHTML = `
+                <div class="search-suggestion-item" style="padding: 12px; color: #666; text-align: center;">
+                    No suggestions found
+                </div>
+            `;
+        } else {
+            dropdown.innerHTML = suggestions.map(suggestion => {
+                const highlightedTitle = this.highlightMatch(suggestion.title, query);
+                
+                if (suggestion.type === 'post') {
+                    return `
+                        <div class="search-suggestion-item post-suggestion" data-url="${suggestion.url}" style="padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; align-items: center;">
+                            <div style="flex: 1;">
+                                <div style="font-weight: 500; color: #333; margin-bottom: 4px;">
+                                    <i class="fas fa-file-alt" style="color: var(--accent-copper); margin-right: 6px;"></i>
+                                    ${highlightedTitle}
+                                </div>
+                                ${suggestion.excerpt ? `<div style="font-size: 0.85rem; color: #666; line-height: 1.3;">${suggestion.excerpt}</div>` : ''}
+                                ${suggestion.category ? `<div style="font-size: 0.75rem; color: var(--accent-copper); margin-top: 4px;">${suggestion.category}</div>` : ''}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    return `
+                        <div class="search-suggestion-item tag-suggestion" data-url="${suggestion.url}" style="padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; align-items: center;">
+                            <div style="flex: 1;">
+                                <div style="font-weight: 500; color: #333;">
+                                    <i class="fas fa-tag" style="color: var(--accent-copper); margin-right: 6px;"></i>
+                                    ${highlightedTitle}
+                                </div>
+                                <div style="font-size: 0.85rem; color: #666;">${suggestion.description}</div>
+                            </div>
+                        </div>
+                    `;
+                }
+            }).join('');
+        }
+        
+        // Add click handlers
+        dropdown.querySelectorAll('.search-suggestion-item[data-url]').forEach(item => {
+            item.addEventListener('click', () => {
+                window.location.href = item.dataset.url;
+            });
+            
+            item.addEventListener('mouseenter', () => {
+                item.style.backgroundColor = '#f8f9fa';
+            });
+            
+            item.addEventListener('mouseleave', () => {
+                item.style.backgroundColor = '';
+            });
+        });
+        
+        this.showSuggestions(index);
+    }
+    
+    highlightMatch(text, query) {
+        const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+        return text.replace(regex, '<mark style="background: #fff3cd; padding: 1px 2px;">$1</mark>');
+    }
+    
+    showSuggestions(index) {
+        const dropdown = this.suggestionDropdowns[index];
+        if (dropdown) {
+            dropdown.style.display = 'block';
+            this.isVisible = true;
+        }
+    }
+    
+    hideSuggestions(index) {
+        const dropdown = this.suggestionDropdowns[index];
+        if (dropdown) {
+            dropdown.style.display = 'none';
+            this.isVisible = false;
+        }
+    }
+    
+    handleKeyboardNavigation(event, index) {
+        const dropdown = this.suggestionDropdowns[index];
+        if (!dropdown || !this.isVisible) return;
+        
+        const items = dropdown.querySelectorAll('.search-suggestion-item[data-url]');
+        if (items.length === 0) return;
+        
+        const currentActive = dropdown.querySelector('.search-suggestion-item.active');
+        let newActiveIndex = -1;
+        
+        if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            newActiveIndex = currentActive ? Array.from(items).indexOf(currentActive) + 1 : 0;
+            if (newActiveIndex >= items.length) newActiveIndex = 0;
+        } else if (event.key === 'ArrowUp') {
+            event.preventDefault();
+            newActiveIndex = currentActive ? Array.from(items).indexOf(currentActive) - 1 : items.length - 1;
+            if (newActiveIndex < 0) newActiveIndex = items.length - 1;
+        } else if (event.key === 'Enter' && currentActive) {
+            event.preventDefault();
+            window.location.href = currentActive.dataset.url;
+            return;
+        } else if (event.key === 'Escape') {
+            this.hideSuggestions(index);
+            return;
+        }
+        
+        // Update active state
+        items.forEach(item => item.classList.remove('active'));
+        if (newActiveIndex >= 0 && items[newActiveIndex]) {
+            items[newActiveIndex].classList.add('active');
+            items[newActiveIndex].style.backgroundColor = '#e3f2fd';
+        }
+    }
+}
+
+// Global instant search manager
+let instantSearchManager;
+
+/**
+ * Recently Viewed Posts Manager
+ * Tracks and displays recently viewed posts using localStorage
+ */
+class RecentlyViewedManager {
+    constructor() {
+        this.storageKey = 'recentlyViewedPosts';
+        this.maxItems = 5;
+        this.sidebarSelector = '#recently-viewed-sidebar';
+        this.init();
+    }
+    
+    init() {
+        // Track current post if we're on a post page
+        this.trackCurrentPost();
+        
+        // Create and display sidebar
+        this.createSidebar();
+        this.updateSidebar();
+    }
+    
+    trackCurrentPost() {
+        // Check if we're on a post page (primary method)
+        const postMeta = document.querySelector('meta[property="og:type"][content="article"]');
+        let postData = null;
+        
+        if (postMeta) {
+            // Get post information from meta tags
+            const postTitle = document.querySelector('meta[property="og:title"]')?.content;
+            const postUrl = document.querySelector('meta[property="og:url"]')?.content || window.location.href;
+            const postImage = document.querySelector('meta[property="og:image"]')?.content;
+            const postDescription = document.querySelector('meta[property="og:description"]')?.content;
+            
+            if (postTitle && postUrl) {
+                postData = {
+                    title: postTitle,
+                    url: postUrl,
+                    image: postImage,
+                    description: postDescription,
+                    viewedAt: new Date().toISOString(),
+                    id: this.generatePostId(postUrl)
+                };
+            }
+        } else {
+            // Fallback method: detect post pages by URL pattern or page structure
+            const isPostPage = window.location.pathname.match(/\/posts\/[^\/]+$/);
+            if (isPostPage) {
+                const pageTitle = document.title;
+                const h1Element = document.querySelector('h1');
+                const imgElement = document.querySelector('article img, .post-content img');
+                const excerptElement = document.querySelector('.post-content p');
+                
+                if (pageTitle && h1Element) {
+                    postData = {
+                        title: h1Element.textContent.trim(),
+                        url: window.location.href,
+                        image: imgElement?.src,
+                        description: excerptElement?.textContent.substring(0, 200),
+                        viewedAt: new Date().toISOString(),
+                        id: this.generatePostId(window.location.href)
+                    };
+                }
+            }
+        }
+        
+        if (postData) {
+            this.addToRecentlyViewed(postData);
+        }
+    }
+    
+    generatePostId(url) {
+        // Extract post ID from URL pattern /posts/123 or /posts/slug
+        const matches = url.match(/\/posts\/([^\/\?]+)/);
+        return matches ? matches[1] : url;
+    }
+    
+    addToRecentlyViewed(postData) {
+        let recentPosts = this.getRecentlyViewed();
+        
+        // Remove if already exists (to update position)
+        recentPosts = recentPosts.filter(post => post.id !== postData.id);
+        
+        // Add to beginning
+        recentPosts.unshift(postData);
+        
+        // Limit to max items
+        recentPosts = recentPosts.slice(0, this.maxItems);
+        
+        // Save to localStorage
+        localStorage.setItem(this.storageKey, JSON.stringify(recentPosts));
+        
+        // Update sidebar if it exists
+        this.updateSidebar();
+    }
+    
+    getRecentlyViewed() {
+        try {
+            const stored = localStorage.getItem(this.storageKey);
+            return stored ? JSON.parse(stored) : [];
+        } catch (error) {
+            console.error('Error reading recently viewed posts:', error);
+            return [];
+        }
+    }
+    
+    createSidebar() {
+        // Check if sidebar already exists
+        if (document.querySelector(this.sidebarSelector)) return;
+        
+        // Show sidebar on all non-admin pages
+        const isAdminPage = window.location.pathname.startsWith('/admin');
+        const isEditPage = window.location.pathname.includes('/edit') || window.location.pathname.includes('/create');
+        
+        // Don't show on admin pages or editing pages
+        if (isAdminPage || isEditPage) return;
+        
+        // Create sidebar HTML
+        const sidebarHtml = `
+            <div id="recently-viewed-sidebar" class="recently-viewed-sidebar">
+                <div class="sidebar-header">
+                    <h5 class="sidebar-title">
+                        <i class="fas fa-history"></i>
+                        Recently Viewed
+                    </h5>
+                    <button class="sidebar-close" onclick="recentlyViewedManager.hideSidebar()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="sidebar-content" id="recently-viewed-content">
+                    <!-- Content will be populated by updateSidebar() -->
+                </div>
+                <div class="sidebar-toggle" onclick="recentlyViewedManager.toggleSidebar()">
+                    <i class="fas fa-history"></i>
+                </div>
+            </div>
+        `;
+        
+        // Add to page
+        document.body.insertAdjacentHTML('beforeend', sidebarHtml);
+        
+        // Add entrance animation
+        setTimeout(() => {
+            const sidebar = document.querySelector(this.sidebarSelector);
+            if (sidebar) {
+                sidebar.style.transition = 'right 0.3s ease';
+            }
+        }, 100);
+    }
+    
+    updateSidebar() {
+        const sidebar = document.querySelector(this.sidebarSelector);
+        const content = document.getElementById('recently-viewed-content');
+        
+        if (!sidebar || !content) return;
+        
+        const recentPosts = this.getRecentlyViewed();
+        
+        if (recentPosts.length === 0) {
+            content.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-book-open"></i>
+                    <p>No recent articles</p>
+                </div>
+            `;
+            return;
+        }
+        
+        content.innerHTML = recentPosts.map(post => `
+            <div class="recent-post-item" onclick="window.location.href='${post.url}'">
+                <div class="recent-post-image">
+                    ${post.image ? 
+                        `<img src="${post.image}" alt="${post.title}" loading="lazy">` :
+                        `<div class="placeholder-image"><i class="fas fa-file-alt"></i></div>`
+                    }
+                </div>
+                <div class="recent-post-content">
+                    <h6 class="recent-post-title">${this.truncateText(post.title, 50)}</h6>
+                    <p class="recent-post-time">${this.formatTime(post.viewedAt)}</p>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    truncateText(text, maxLength) {
+        return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    formatTime(isoString) {
+        const date = new Date(isoString);
+        const now = new Date();
+        const diffMs = now - date;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+        
+        if (diffMins < 1) return 'Just now';
+        if (diffMins < 60) return `${diffMins}m ago`;
+        if (diffHours < 24) return `${diffHours}h ago`;
+        if (diffDays < 7) return `${diffDays}d ago`;
+        
+        return date.toLocaleDateString();
+    }
+    
+    toggleSidebar() {
+        const sidebar = document.querySelector(this.sidebarSelector);
+        if (sidebar) {
+            sidebar.classList.toggle('sidebar-open');
+        }
+    }
+    
+    showSidebar() {
+        const sidebar = document.querySelector(this.sidebarSelector);
+        if (sidebar) {
+            sidebar.classList.add('sidebar-open');
+        }
+    }
+    
+    hideSidebar() {
+        const sidebar = document.querySelector(this.sidebarSelector);
+        if (sidebar) {
+            sidebar.classList.remove('sidebar-open');
+        }
+    }
+    
+    clearHistory() {
+        localStorage.removeItem(this.storageKey);
+        this.updateSidebar();
+        showToast('Recently viewed history cleared');
+    }
+}
+
+// Global recently viewed manager
+let recentlyViewedManager;
+
 // Initialize any additional functionality when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Japan\'s History blog initialized with loading animations');
@@ -948,6 +1431,12 @@ document.addEventListener('DOMContentLoaded', function() {
         addSearchLoading();
         addPageTransition();
         enhancePostCards();
+        
+        // Initialize instant search
+        instantSearchManager = new InstantSearchManager();
+        
+        // Initialize recently viewed posts
+        recentlyViewedManager = new RecentlyViewedManager();
         
         // Initialize responsive pagination (handles screen size-based per_page)
         responsivePaginationManager = new ResponsivePaginationManager();

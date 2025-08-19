@@ -100,6 +100,17 @@ def init_db():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
             
+            CREATE TABLE IF NOT EXISTS social_links (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                url TEXT NOT NULL,
+                icon_class TEXT NOT NULL,
+                display_order INTEGER DEFAULT 0,
+                is_active BOOLEAN DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            
             CREATE TABLE IF NOT EXISTS about_info (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
@@ -207,6 +218,19 @@ def init_db():
             for name, description, template in default_templates:
                 db.execute('INSERT INTO post_templates (name, description, content_template) VALUES (?, ?, ?)', 
                           (name, description, template))
+        
+        # Create default social links if none exist
+        social_links_exist = db.execute('SELECT COUNT(*) FROM social_links').fetchone()[0]
+        if social_links_exist == 0:
+            default_social_links = [
+                ('Twitter', '#', 'fab fa-twitter', 1),
+                ('Facebook', '#', 'fab fa-facebook', 2),
+                ('Instagram', '#', 'fab fa-instagram', 3),
+                ('YouTube', '#', 'fab fa-youtube', 4)
+            ]
+            for name, url, icon_class, display_order in default_social_links:
+                db.execute('INSERT INTO social_links (name, url, icon_class, display_order, is_active) VALUES (?, ?, ?, ?, ?)', 
+                          (name, url, icon_class, display_order, 0))  # Start as inactive
         
         # Migration: Add activity_log table if it doesn't exist
         try:
@@ -524,6 +548,134 @@ class PostModel:
             ''', (post_id, tag['id']))
         
         db.commit()
+    
+    @staticmethod
+    def get_search_suggestions(query, limit=5):
+        """Get search suggestions from post titles."""
+        db = get_db()
+        search_term = f'%{query}%'
+        
+        return db.execute('''
+            SELECT p.*, c.name as category_name
+            FROM posts p
+            LEFT JOIN categories c ON p.category_id = c.id
+            WHERE p.title LIKE ? AND p.status = 'published'
+            ORDER BY p.created_at DESC
+            LIMIT ?
+        ''', (search_term, limit)).fetchall()
+    
+    @staticmethod
+    def advanced_search(query, page=1, per_page=10, category_filter='', tag_filter='', date_from='', date_to='', sort_by='relevance'):
+        """Advanced search with filters and sorting."""
+        db = get_db()
+        offset = (page - 1) * per_page
+        search_term = f'%{query}%'
+        
+        # Build the query dynamically based on filters
+        base_query = '''
+            SELECT DISTINCT p.*, c.name as category_name, c.slug as category_slug, 
+                   GROUP_CONCAT(t.name, ', ') as tag_names
+            FROM posts p
+            LEFT JOIN categories c ON p.category_id = c.id
+            LEFT JOIN post_tags pt ON p.id = pt.post_id
+            LEFT JOIN tags t ON pt.tag_id = t.id
+            WHERE p.status = 'published' 
+            AND (p.title LIKE ? OR p.content LIKE ? OR p.excerpt LIKE ?)
+        '''
+        
+        params = [search_term, search_term, search_term]
+        
+        # Add category filter
+        if category_filter:
+            base_query += ' AND c.slug = ?'
+            params.append(category_filter)
+        
+        # Add tag filter
+        if tag_filter:
+            base_query += '''
+                AND p.id IN (
+                    SELECT DISTINCT pt2.post_id 
+                    FROM post_tags pt2 
+                    JOIN tags t2 ON pt2.tag_id = t2.id 
+                    WHERE t2.slug = ?
+                )
+            '''
+            params.append(tag_filter)
+        
+        # Add date filters
+        if date_from:
+            base_query += ' AND DATE(p.created_at) >= ?'
+            params.append(date_from)
+        
+        if date_to:
+            base_query += ' AND DATE(p.created_at) <= ?'
+            params.append(date_to)
+        
+        # Group by post
+        base_query += ' GROUP BY p.id'
+        
+        # Add sorting
+        if sort_by == 'date_desc':
+            base_query += ' ORDER BY p.created_at DESC'
+        elif sort_by == 'date_asc':
+            base_query += ' ORDER BY p.created_at ASC'
+        elif sort_by == 'title':
+            base_query += ' ORDER BY p.title ASC'
+        else:  # relevance (default)
+            base_query += ' ORDER BY p.created_at DESC'
+        
+        # Add pagination
+        base_query += ' LIMIT ? OFFSET ?'
+        params.extend([per_page, offset])
+        
+        return db.execute(base_query, params).fetchall()
+    
+    @staticmethod
+    def count_advanced_search(query, category_filter='', tag_filter='', date_from='', date_to=''):
+        """Count results for advanced search."""
+        db = get_db()
+        search_term = f'%{query}%'
+        
+        # Build the count query
+        count_query = '''
+            SELECT COUNT(DISTINCT p.id) 
+            FROM posts p
+            LEFT JOIN categories c ON p.category_id = c.id
+            LEFT JOIN post_tags pt ON p.id = pt.post_id
+            LEFT JOIN tags t ON pt.tag_id = t.id
+            WHERE p.status = 'published' 
+            AND (p.title LIKE ? OR p.content LIKE ? OR p.excerpt LIKE ?)
+        '''
+        
+        params = [search_term, search_term, search_term]
+        
+        # Add category filter
+        if category_filter:
+            count_query += ' AND c.slug = ?'
+            params.append(category_filter)
+        
+        # Add tag filter
+        if tag_filter:
+            count_query += '''
+                AND p.id IN (
+                    SELECT DISTINCT pt2.post_id 
+                    FROM post_tags pt2 
+                    JOIN tags t2 ON pt2.tag_id = t2.id 
+                    WHERE t2.slug = ?
+                )
+            '''
+            params.append(tag_filter)
+        
+        # Add date filters
+        if date_from:
+            count_query += ' AND DATE(p.created_at) >= ?'
+            params.append(date_from)
+        
+        if date_to:
+            count_query += ' AND DATE(p.created_at) <= ?'
+            params.append(date_to)
+        
+        return db.execute(count_query, params).fetchone()[0]
 
 
 class TagModel:
@@ -573,6 +725,38 @@ class TagModel:
         db.execute('DELETE FROM post_tags WHERE tag_id = ?', (tag_id,))
         db.execute('DELETE FROM tags WHERE id = ?', (tag_id,))
         db.commit()
+    
+    @staticmethod
+    def get_tag_suggestions(query, limit=3):
+        """Get tag suggestions for search."""
+        db = get_db()
+        search_term = f'%{query}%'
+        
+        return db.execute('''
+            SELECT t.*, COUNT(pt.post_id) as post_count
+            FROM tags t
+            LEFT JOIN post_tags pt ON t.id = pt.tag_id
+            WHERE t.name LIKE ?
+            GROUP BY t.id
+            ORDER BY post_count DESC, t.name
+            LIMIT ?
+        ''', (search_term, limit)).fetchall()
+    
+    @staticmethod
+    def get_tags_with_posts(limit=20):
+        """Get only tags that have at least one published post."""
+        db = get_db()
+        return db.execute('''
+            SELECT t.*, COUNT(pt.post_id) as post_count
+            FROM tags t
+            INNER JOIN post_tags pt ON t.id = pt.tag_id
+            INNER JOIN posts p ON pt.post_id = p.id
+            WHERE p.status = 'published'
+            GROUP BY t.id
+            HAVING COUNT(pt.post_id) > 0
+            ORDER BY post_count DESC, t.name
+            LIMIT ?
+        ''', (limit,)).fetchall()
 
 
 class CategoryModel:
@@ -642,6 +826,91 @@ class CategoryModel:
         else:
             result = db.execute('SELECT id FROM categories WHERE slug = ?', (slug,)).fetchone()
         return result is not None
+    
+    @staticmethod
+    def get_categories_with_posts():
+        """Get only categories that have at least one published post."""
+        db = get_db()
+        return db.execute('''
+            SELECT c.*, COUNT(p.id) as post_count
+            FROM categories c
+            INNER JOIN posts p ON c.id = p.category_id 
+            WHERE p.status = 'published'
+            GROUP BY c.id
+            HAVING COUNT(p.id) > 0
+            ORDER BY c.name
+        ''').fetchall()
+
+
+class SocialLinksModel:
+    """Model for handling social media links."""
+    
+    @staticmethod
+    def get_all_social_links():
+        """Get all social links ordered by display order."""
+        db = get_db()
+        return db.execute('''
+            SELECT * FROM social_links 
+            ORDER BY display_order ASC, name ASC
+        ''').fetchall()
+    
+    @staticmethod
+    def get_active_social_links():
+        """Get only active social links ordered by display order."""
+        db = get_db()
+        return db.execute('''
+            SELECT * FROM social_links 
+            WHERE is_active = 1 
+            ORDER BY display_order ASC, name ASC
+        ''').fetchall()
+    
+    @staticmethod
+    def get_social_link_by_id(link_id):
+        """Get a social link by its ID."""
+        db = get_db()
+        return db.execute('SELECT * FROM social_links WHERE id = ?', (link_id,)).fetchone()
+    
+    @staticmethod
+    def create_social_link(name, url, icon_class, display_order=0, is_active=True):
+        """Create a new social link."""
+        db = get_db()
+        db.execute('''
+            INSERT INTO social_links (name, url, icon_class, display_order, is_active) 
+            VALUES (?, ?, ?, ?, ?)
+        ''', (name, url, icon_class, display_order, is_active))
+        db.commit()
+        return db.lastrowid
+    
+    @staticmethod
+    def update_social_link(link_id, name, url, icon_class, display_order=0, is_active=True):
+        """Update an existing social link."""
+        db = get_db()
+        db.execute('''
+            UPDATE social_links 
+            SET name = ?, url = ?, icon_class = ?, display_order = ?, is_active = ?, 
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        ''', (name, url, icon_class, display_order, is_active, link_id))
+        db.commit()
+    
+    @staticmethod
+    def delete_social_link(link_id):
+        """Delete a social link."""
+        db = get_db()
+        db.execute('DELETE FROM social_links WHERE id = ?', (link_id,))
+        db.commit()
+    
+    @staticmethod
+    def reorder_social_links(link_orders):
+        """Update display order for multiple social links."""
+        db = get_db()
+        for link_id, display_order in link_orders.items():
+            db.execute('''
+                UPDATE social_links 
+                SET display_order = ?, updated_at = CURRENT_TIMESTAMP 
+                WHERE id = ?
+            ''', (display_order, link_id))
+        db.commit()
 
 
 class AdminModel:
