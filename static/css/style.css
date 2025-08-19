@@ -2638,6 +2638,13 @@ footer {
 
 /* ===== LOW PRIORITY FIXES ===== */
 
+/* Desktop Navigation Height */
+@media (min-width: 769px) {
+    .navbar-enhanced {
+        min-height: 70px;
+    }
+}
+
 /* Mobile Navigation Height - Low Priority Fix */
 @media (max-width: 768px) {
     .navbar-enhanced {
