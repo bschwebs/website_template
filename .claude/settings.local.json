@@ -16,7 +16,12 @@
       "mcp__playwright__browser_evaluate",
       "Bash(git add:*)",
       "Bash(del init_social_links.py)",
-      "mcp__playwright__browser_resize"
+      "mcp__playwright__browser_resize",
+      "mcp__playwright__browser_close",
+      "mcp__playwright__browser_press_key",
+      "mcp__playwright__browser_handle_dialog",
+      "Bash(npx playwright test:*)",
+      "Bash(npm install)"
     ],
     "deny": [],
     "ask": [],

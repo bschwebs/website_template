@@ -19,7 +19,16 @@
                 <div class="position-absolute w-100 h-100 jumbotron-overlay" style="background: linear-gradient(to bottom, rgba(45, 24, 16, 0.3) 0%, rgba(45, 24, 16, 0.8) 100%); top: 0; left: 0;"></div>
                 <div class="position-relative">
                     <h1 class="display-4 mb-3 text-white observe-slide-left">Japan's History</h1>
+                    {% if random_quote %}
+                    <blockquote class="lead mb-0 text-white observe-slide-right">
+                        <p class="mb-4">"{{ random_quote.text }}"</p>
+                        <footer class="blockquote-footer text-white-50">
+                            <cite>{{ random_quote.author }}</cite>{% if random_quote.source %}, {{ random_quote.source }}{% endif %}
+                        </footer>
+                    </blockquote>
+                    {% else %}
                     <p class="lead mb-0 text-white observe-slide-right">"From ancient tombs to modern towers, Japan's story is one of resilience, ritual, and rebirth. Step into the chronicles of an archipelago where every era forged a new destiny."</p>
+                    {% endif %}
                 </div>
             </div>
         </a>

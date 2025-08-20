@@ -2,7 +2,7 @@
 Main routes for the Story Hub application.
 """
 from flask import Blueprint, render_template, request, flash, redirect, url_for
-from models import PostModel, TagModel, CategoryModel, ContactModel, EmailConfigModel, AboutModel, ActivityLogModel, SocialLinksModel
+from models import PostModel, TagModel, CategoryModel, ContactModel, EmailConfigModel, AboutModel, ActivityLogModel, SocialLinksModel, QuoteModel
 from utils import is_admin_logged_in
 from forms import ContactForm
 import smtplib
@@ -50,6 +50,9 @@ def index():
     # Get popular tags for sidebar
     popular_tags = TagModel.get_popular_tags(8)
     
+    # Get random quote for jumbotron
+    random_quote = QuoteModel.get_random_quote()
+    
     return render_template('index.html', 
                          posts=posts, 
                          featured_post=featured_post,
@@ -61,7 +64,8 @@ def index():
                          prev_page=prev_page,
                          next_page=next_page,
                          per_page=per_page,
-                         popular_tags=popular_tags)
+                         popular_tags=popular_tags,
+                         random_quote=random_quote)
 
 
 

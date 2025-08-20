@@ -111,3 +111,7 @@
 - [x] **Navigation Contrast**: Fixed navigation link contrast from 1.08 to WCAG AA compliant levels
 - [x] **Touch Targets**: Implemented 44px minimum touch target sizes for all interactive elements
 - [x] **Mobile Responsiveness**: Added comprehensive mobile touch target improvements
+
+### Wishlist
+- [ ] Mailing list implimentation (Need mail server first)
+- [ ] Postgres db backend upgrades

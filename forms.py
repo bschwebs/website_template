@@ -160,3 +160,23 @@ class SocialLinkForm(FlaskForm):
 class DeleteSocialLinkForm(FlaskForm):
     """Form for deleting social media links (CSRF protection)."""
     submit = SubmitField('Delete')
+
+
+class QuoteForm(FlaskForm):
+    """Form for creating and editing quotes."""
+    text = TextAreaField('Quote Text', validators=[DataRequired(), Length(min=10, max=500)],
+                        render_kw={"placeholder": "Enter the quote text here...", "rows": 4})
+    author = StringField('Author', validators=[DataRequired(), Length(min=2, max=100)],
+                        render_kw={"placeholder": "Author name"})
+    source = StringField('Source', validators=[Length(max=200)],
+                        render_kw={"placeholder": "Book, speech, etc. (optional)"})
+    language = SelectField('Language', choices=[('en', 'English'), ('ja', 'Japanese')], default='en')
+    display_order = IntegerField('Display Order', validators=[Optional()], default=0,
+                               render_kw={"placeholder": "0 for automatic ordering"})
+    is_active = BooleanField('Active', default=True)
+    submit = SubmitField('Save Quote')
+
+
+class DeleteQuoteForm(FlaskForm):
+    """Form for deleting quotes (CSRF protection)."""
+    submit = SubmitField('Delete')

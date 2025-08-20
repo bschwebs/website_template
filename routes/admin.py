@@ -3,8 +3,8 @@ Admin routes for the Story Hub application.
 """
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app, jsonify, send_file, make_response
 from flask_wtf.csrf import validate_csrf
-from models import PostModel, AdminModel, TagModel, CategoryModel, EmailConfigModel, ContactModel, AboutModel, PostTemplateModel, ImageGalleryModel, ActivityLogModel, SocialLinksModel
-from forms import DeleteForm, CategoryForm, DeleteCategoryForm, ChangePasswordForm, AboutForm, PostTemplateForm, ImageGalleryForm, ImageEditForm, ImageSearchForm, BulkDeleteForm, SocialLinkForm, DeleteSocialLinkForm
+from models import PostModel, AdminModel, TagModel, CategoryModel, EmailConfigModel, ContactModel, AboutModel, PostTemplateModel, ImageGalleryModel, ActivityLogModel, SocialLinksModel, QuoteModel
+from forms import DeleteForm, CategoryForm, DeleteCategoryForm, ChangePasswordForm, AboutForm, PostTemplateForm, ImageGalleryForm, ImageEditForm, ImageSearchForm, BulkDeleteForm, SocialLinkForm, DeleteSocialLinkForm, QuoteForm, DeleteQuoteForm
 from utils import admin_required, delete_file, save_uploaded_file
 import os
 import json
@@ -1107,6 +1107,183 @@ def reorder_social_links():
         )
         
         return jsonify({'success': True, 'message': 'Social links reordered successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@admin.route('/admin/quotes')
+@admin_required
+def admin_quotes():
+    """Manage quotes."""
+    quotes = QuoteModel.get_all_quotes()
+    active_count = QuoteModel.count_active_quotes()
+    total_count = QuoteModel.count_quotes()
+    
+    return render_template('admin/quotes.html', 
+                         quotes=quotes, 
+                         active_count=active_count,
+                         total_count=total_count)
+
+
+@admin.route('/admin/quotes/new', methods=['GET', 'POST'])
+@admin_required
+def admin_create_quote():
+    """Create a new quote."""
+    form = QuoteForm()
+    
+    if form.validate_on_submit():
+        try:
+            quote_id = QuoteModel.create_quote(
+                text=form.text.data,
+                author=form.author.data,
+                source=form.source.data,
+                language=form.language.data,
+                is_active=form.is_active.data,
+                display_order=form.display_order.data or 0
+            )
+            
+            # Log activity
+            admin_username = session.get('admin_user', 'Unknown')
+            ActivityLogModel.log_activity(
+                admin_username=admin_username,
+                action='Created quote',
+                details=f'Quote ID: {quote_id}, Author: {form.author.data}'
+            )
+            
+            flash('Quote created successfully!', 'success')
+            return redirect(url_for('admin.admin_quotes'))
+        except Exception as e:
+            flash('Error creating quote.', 'error')
+    
+    return render_template('admin/quote_form.html', form=form, action='Create')
+
+
+@admin.route('/admin/quotes/<int:quote_id>/edit', methods=['GET', 'POST'])
+@admin_required
+def admin_edit_quote(quote_id):
+    """Edit an existing quote."""
+    quote = QuoteModel.get_quote_by_id(quote_id)
+    if not quote:
+        flash('Quote not found.', 'error')
+        return redirect(url_for('admin.admin_quotes'))
+    
+    form = QuoteForm()
+    
+    if form.validate_on_submit():
+        try:
+            QuoteModel.update_quote(
+                quote_id=quote_id,
+                text=form.text.data,
+                author=form.author.data,
+                source=form.source.data,
+                language=form.language.data,
+                is_active=form.is_active.data,
+                display_order=form.display_order.data or 0
+            )
+            
+            # Log activity
+            admin_username = session.get('admin_user', 'Unknown')
+            ActivityLogModel.log_activity(
+                admin_username=admin_username,
+                action='Updated quote',
+                details=f'Quote ID: {quote_id}, Author: {form.author.data}'
+            )
+            
+            flash('Quote updated successfully!', 'success')
+            return redirect(url_for('admin.admin_quotes'))
+        except Exception as e:
+            flash('Error updating quote.', 'error')
+    
+    # Pre-populate form
+    if request.method == 'GET':
+        form.text.data = quote['text']
+        form.author.data = quote['author']
+        form.source.data = quote['source']
+        form.language.data = quote['language']
+        form.is_active.data = quote['is_active']
+        form.display_order.data = quote['display_order']
+    
+    return render_template('admin/quote_form.html', form=form, quote=quote, action='Edit')
+
+
+@admin.route('/admin/quotes/<int:quote_id>/delete', methods=['POST'])
+@admin_required
+def admin_delete_quote(quote_id):
+    """Delete a quote."""
+    form = DeleteQuoteForm()
+    
+    if form.validate_on_submit():
+        quote = QuoteModel.get_quote_by_id(quote_id)
+        if not quote:
+            flash('Quote not found.', 'error')
+            return redirect(url_for('admin.admin_quotes'))
+        
+        try:
+            QuoteModel.delete_quote(quote_id)
+            
+            # Log activity
+            admin_username = session.get('admin_user', 'Unknown')
+            ActivityLogModel.log_activity(
+                admin_username=admin_username,
+                action='Deleted quote',
+                details=f'Quote ID: {quote_id}, Author: {quote["author"]}'
+            )
+            
+            flash('Quote deleted successfully!', 'success')
+        except Exception as e:
+            flash('Error deleting quote.', 'error')
+    
+    return redirect(url_for('admin.admin_quotes'))
+
+
+@admin.route('/admin/quotes/<int:quote_id>/toggle', methods=['POST'])
+@admin_required
+def admin_toggle_quote(quote_id):
+    """Toggle quote active status."""
+    try:
+        quote = QuoteModel.get_quote_by_id(quote_id)
+        if not quote:
+            return jsonify({'success': False, 'message': 'Quote not found'}), 404
+        
+        QuoteModel.toggle_active(quote_id)
+        
+        # Log activity
+        admin_username = session.get('admin_user', 'Unknown')
+        new_status = 'activated' if not quote['is_active'] else 'deactivated'
+        ActivityLogModel.log_activity(
+            admin_username=admin_username,
+            action=f'Quote {new_status}',
+            details=f'Quote ID: {quote_id}, Author: {quote["author"]}'
+        )
+        
+        return jsonify({'success': True, 'message': f'Quote {new_status} successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@admin.route('/admin/quotes/reorder', methods=['POST'])
+@admin_required
+def admin_reorder_quotes():
+    """Reorder quotes via AJAX."""
+    try:
+        data = request.get_json()
+        if not data or 'orders' not in data:
+            return jsonify({'success': False, 'message': 'Invalid data'}), 400
+        
+        # Update display orders
+        QuoteModel.reorder_quotes(data['orders'])
+        
+        # Log activity
+        admin_username = session.get('admin_user', 'Unknown')
+        ActivityLogModel.log_activity(
+            admin_username=admin_username,
+            action='Reordered quotes',
+            details=f'New order: {data["orders"]}'
+        )
+        
+        return jsonify({'success': True, 'message': 'Quotes reordered successfully'})
         
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500

@@ -797,27 +797,161 @@ function initializeJumbotronEffects() {
 }
 
 /**
- * Lazy loading implementation for images
+ * Enhanced Lazy Loading with Blur-Up Effect
+ * Progressive image loading with smooth transitions
  */
-function initializeLazyLoading() {
-    if ('IntersectionObserver' in window) {
-        const imageObserver = new IntersectionObserver((entries) => {
-            entries.forEach((entry) => {
+class LazyImageLoader {
+    constructor() {
+        this.imageObserver = null;
+        this.init();
+    }
+    
+    init() {
+        if ('IntersectionObserver' in window) {
+            this.createObserver();
+            this.processImages();
+        } else {
+            // Fallback for older browsers
+            this.loadAllImages();
+        }
+    }
+    
+    createObserver() {
+        const options = {
+            threshold: 0.1,
+            rootMargin: '50px 0px 50px 0px'
+        };
+        
+        this.imageObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
                 if (entry.isIntersecting) {
-                    const img = entry.target;
-                    img.src = img.dataset.src || img.src;
-                    img.classList.remove('image-loading');
-                    img.classList.add('image-loaded');
-                    imageObserver.unobserve(img);
+                    this.loadImage(entry.target);
                 }
             });
+        }, options);
+    }
+    
+    processImages() {
+        // Find all images that should be lazy loaded
+        const images = document.querySelectorAll('img[data-src], img[loading="lazy"]:not([data-processed])');
+        
+        images.forEach(img => {
+            this.setupLazyImage(img);
         });
-
+    }
+    
+    setupLazyImage(img) {
+        // Skip if already processed
+        if (img.hasAttribute('data-processed')) return;
+        
+        // Mark as processed
+        img.setAttribute('data-processed', 'true');
+        
+        // Add lazy image class for styling
+        img.classList.add('lazy-image');
+        
+        // Wrap in container if not already wrapped
+        if (!img.parentElement.classList.contains('lazy-image-container')) {
+            const container = document.createElement('div');
+            container.className = 'lazy-image-container';
+            img.parentElement.insertBefore(container, img);
+            container.appendChild(img);
+            
+            // Add shimmer placeholder
+            const placeholder = document.createElement('div');
+            placeholder.className = 'image-placeholder';
+            container.appendChild(placeholder);
+        }
+        
+        // Store original src if not using data-src
+        if (!img.hasAttribute('data-src') && img.src) {
+            img.setAttribute('data-src', img.src);
+            img.removeAttribute('src'); // Remove src to prevent immediate loading
+        }
+        
+        // Start observing
+        if (this.imageObserver) {
+            this.imageObserver.observe(img);
+        }
+    }
+    
+    loadImage(img) {
+        return new Promise((resolve) => {
+            const imageUrl = img.getAttribute('data-src');
+            
+            if (!imageUrl) {
+                resolve();
+                return;
+            }
+            
+            // Create a new image to preload
+            const imageLoader = new Image();
+            
+            imageLoader.onload = () => {
+                // Image loaded successfully
+                img.src = imageUrl;
+                img.removeAttribute('data-src');
+                
+                // Add loaded class with slight delay for smooth transition
+                setTimeout(() => {
+                    img.classList.add('loaded');
+                }, 50);
+                
+                // Stop observing this image
+                if (this.imageObserver) {
+                    this.imageObserver.unobserve(img);
+                }
+                
+                resolve();
+            };
+            
+            imageLoader.onerror = () => {
+                // Handle error gracefully
+                img.classList.add('loaded'); // Still remove blur to show broken image
+                if (this.imageObserver) {
+                    this.imageObserver.unobserve(img);
+                }
+                resolve();
+            };
+            
+            // Start loading
+            imageLoader.src = imageUrl;
+        });
+    }
+    
+    loadAllImages() {
+        // Fallback for browsers without IntersectionObserver
         const images = document.querySelectorAll('img[data-src]');
-        images.forEach((img) => {
-            img.classList.add('image-loading');
-            imageObserver.observe(img);
+        images.forEach(img => {
+            const src = img.getAttribute('data-src');
+            if (src) {
+                img.src = src;
+                img.removeAttribute('data-src');
+                img.classList.add('loaded');
+            }
         });
+    }
+    
+    // Method to handle dynamically added images
+    observeNewImages(container) {
+        if (!container) return;
+        
+        const newImages = container.querySelectorAll('img:not([data-processed])');
+        newImages.forEach(img => {
+            this.setupLazyImage(img);
+        });
+    }
+}
+
+// Global lazy image loader instance
+let lazyImageLoader;
+
+/**
+ * Initialize lazy loading implementation
+ */
+function initializeLazyLoading() {
+    if (!lazyImageLoader) {
+        lazyImageLoader = new LazyImageLoader();
     }
 }
 

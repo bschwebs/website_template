@@ -145,6 +145,18 @@ def init_db():
                 height INTEGER,
                 uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
+            
+            CREATE TABLE IF NOT EXISTS quotes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                text TEXT NOT NULL,
+                author TEXT NOT NULL,
+                source TEXT,
+                language TEXT DEFAULT 'en',
+                is_active BOOLEAN DEFAULT 1,
+                display_order INTEGER DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
         ''')
         
         # Create default admin user if none exists
@@ -247,6 +259,25 @@ def init_db():
                     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
+        
+        # Create default quotes if none exist
+        quotes_exist = db.execute('SELECT COUNT(*) FROM quotes').fetchone()[0]
+        if quotes_exist == 0:
+            default_quotes = [
+                ('The ultimate aim of the ego is not to see something, but to be something.', 'Muhammad Iqbal', 'Islamic philosophy', 'en'),
+                ('A journey of a thousand miles begins with a single step.', 'Lao Tzu', 'Tao Te Ching', 'en'),
+                ('Fall seven times, stand up eight.', 'Japanese Proverb', 'Traditional Japanese wisdom', 'en'),
+                ('The cherry blossoms fall, but the tree remains.', 'Japanese Saying', 'Buddhist philosophy', 'en'),
+                ('Even monkeys fall from trees.', 'Japanese Proverb', 'Traditional Japanese wisdom', 'en'),
+                ('The nail that sticks out gets hammered down.', 'Japanese Proverb', 'Traditional Japanese wisdom', 'en'),
+                ('To know and to act are one and the same.', 'Wang Yangming', 'Confucian philosophy', 'en'),
+                ('Be like water making its way through cracks.', 'Bruce Lee', 'Martial arts philosophy', 'en'),
+                ('From ancient tombs to modern towers, Japan\'s story is one of resilience, ritual, and rebirth.', 'Japan\'s History Blog', 'Our mission', 'en'),
+                ('History is not just what happened, but what we choose to remember and how we choose to tell it.', 'Historical Reflection', 'Modern thought', 'en')
+            ]
+            for text, author, source, language in default_quotes:
+                db.execute('INSERT INTO quotes (text, author, source, language, is_active) VALUES (?, ?, ?, ?, ?)', 
+                          (text, author, source, language, 1))
         
         db.commit()
 
@@ -1251,3 +1282,108 @@ class ActivityLogModel:
             ORDER BY timestamp DESC
             LIMIT ? OFFSET ?
         ''', (search_term, search_term, search_term, per_page, offset)).fetchall()
+
+
+class QuoteModel:
+    """Model for handling quote operations."""
+    
+    @staticmethod
+    def get_all_quotes():
+        """Get all quotes ordered by display order."""
+        db = get_db()
+        return db.execute('''
+            SELECT * FROM quotes 
+            ORDER BY display_order ASC, created_at DESC
+        ''').fetchall()
+    
+    @staticmethod
+    def get_active_quotes():
+        """Get only active quotes."""
+        db = get_db()
+        return db.execute('''
+            SELECT * FROM quotes 
+            WHERE is_active = 1 
+            ORDER BY display_order ASC, created_at DESC
+        ''').fetchall()
+    
+    @staticmethod
+    def get_random_quote():
+        """Get a random active quote."""
+        db = get_db()
+        return db.execute('''
+            SELECT * FROM quotes 
+            WHERE is_active = 1 
+            ORDER BY RANDOM() 
+            LIMIT 1
+        ''').fetchone()
+    
+    @staticmethod
+    def get_quote_by_id(quote_id):
+        """Get quote by ID."""
+        db = get_db()
+        return db.execute('SELECT * FROM quotes WHERE id = ?', (quote_id,)).fetchone()
+    
+    @staticmethod
+    def create_quote(text, author, source=None, language='en', is_active=True, display_order=0):
+        """Create a new quote."""
+        db = get_db()
+        db.execute('''
+            INSERT INTO quotes (text, author, source, language, is_active, display_order)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (text, author, source, language, is_active, display_order))
+        db.commit()
+        return db.lastrowid
+    
+    @staticmethod
+    def update_quote(quote_id, text, author, source=None, language='en', is_active=True, display_order=0):
+        """Update an existing quote."""
+        db = get_db()
+        db.execute('''
+            UPDATE quotes
+            SET text = ?, author = ?, source = ?, language = ?, is_active = ?, display_order = ?, 
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        ''', (text, author, source, language, is_active, display_order, quote_id))
+        db.commit()
+    
+    @staticmethod
+    def delete_quote(quote_id):
+        """Delete a quote."""
+        db = get_db()
+        db.execute('DELETE FROM quotes WHERE id = ?', (quote_id,))
+        db.commit()
+    
+    @staticmethod
+    def toggle_active(quote_id):
+        """Toggle active status of a quote."""
+        db = get_db()
+        db.execute('''
+            UPDATE quotes 
+            SET is_active = NOT is_active, updated_at = CURRENT_TIMESTAMP 
+            WHERE id = ?
+        ''', (quote_id,))
+        db.commit()
+    
+    @staticmethod
+    def reorder_quotes(quote_orders):
+        """Update display order for multiple quotes."""
+        db = get_db()
+        for quote_id, display_order in quote_orders.items():
+            db.execute('''
+                UPDATE quotes 
+                SET display_order = ?, updated_at = CURRENT_TIMESTAMP 
+                WHERE id = ?
+            ''', (display_order, quote_id))
+        db.commit()
+    
+    @staticmethod
+    def count_quotes():
+        """Count total number of quotes."""
+        db = get_db()
+        return db.execute('SELECT COUNT(*) FROM quotes').fetchone()[0]
+    
+    @staticmethod
+    def count_active_quotes():
+        """Count active quotes."""
+        db = get_db()
+        return db.execute('SELECT COUNT(*) FROM quotes WHERE is_active = 1').fetchone()[0]

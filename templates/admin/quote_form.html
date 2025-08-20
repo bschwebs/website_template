@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+
+{% block title %}{{ action }} Quote - Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-2">{{ action }} Quote</h1>
+                    <p class="text-muted">{{ 'Update the' if action == 'Edit' else 'Add a new' }} inspirational quote for the jumbotron</p>
+                </div>
+                <a href="{{ url_for('admin.admin_quotes') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Quotes
+                </a>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-quote-left me-2"></i>
+                        Quote Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="quote-form">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            {{ form.text.label(class="form-label") }}
+                            {{ form.text(class="form-control") }}
+                            {% if form.text.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.text.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                The inspirational quote text (10-500 characters)
+                                <span id="char-count" class="float-end text-muted">0/500</span>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.author.label(class="form-label") }}
+                                    {{ form.author(class="form-control") }}
+                                    {% if form.author.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.author.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">Person who said or wrote the quote</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.source.label(class="form-label") }}
+                                    {{ form.source(class="form-control") }}
+                                    {% if form.source.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.source.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">Book, speech, work, etc. (optional)</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    {{ form.language.label(class="form-label") }}
+                                    {{ form.language(class="form-control") }}
+                                    {% if form.language.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.language.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">Language of the quote</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    {{ form.display_order.label(class="form-label") }}
+                                    {{ form.display_order(class="form-control", min="0") }}
+                                    {% if form.display_order.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.display_order.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">Order for display (0 = automatic)</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">Status</label>
+                                    <div class="form-check mt-2">
+                                        {{ form.is_active(class="form-check-input") }}
+                                        {{ form.is_active.label(class="form-check-label") }}
+                                        {% if form.is_active.errors %}
+                                            <div class="text-danger small">
+                                                {% for error in form.is_active.errors %}{{ error }}{% endfor %}
+                                            </div>
+                                        {% endif %}
+                                        <div class="form-text">Only active quotes appear on the site</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quote Preview -->
+                        <div class="mb-4">
+                            <label class="form-label">Preview</label>
+                            <div class="card bg-light">
+                                <div class="card-body text-center py-4">
+                                    <blockquote class="blockquote">
+                                        <p id="quote-preview-text" class="mb-3">
+                                            <i class="fas fa-quote-left text-muted me-2"></i>
+                                            <span class="quote-content">{{ form.text.data or "Enter quote text above to see preview..." }}</span>
+                                            <i class="fas fa-quote-right text-muted ms-2"></i>
+                                        </p>
+                                        <footer class="blockquote-footer">
+                                            <cite id="quote-preview-author">{{ form.author.data or "Author Name" }}</cite>
+                                            <span id="quote-preview-source">
+                                                {% if form.source.data %}, {{ form.source.data }}{% endif %}
+                                            </span>
+                                        </footer>
+                                    </blockquote>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('admin.admin_quotes') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> {{ 'Update' if action == 'Edit' else 'Create' }} Quote
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const textInput = document.getElementById('text');
+    const authorInput = document.getElementById('author');
+    const sourceInput = document.getElementById('source');
+    const charCount = document.getElementById('char-count');
+    const previewText = document.querySelector('.quote-content');
+    const previewAuthor = document.getElementById('quote-preview-author');
+    const previewSource = document.getElementById('quote-preview-source');
+    
+    // Update character count
+    function updateCharCount() {
+        const length = textInput.value.length;
+        charCount.textContent = `${length}/500`;
+        charCount.className = `float-end text-muted ${length > 450 ? 'text-warning' : ''} ${length > 500 ? 'text-danger' : ''}`;
+    }
+    
+    // Update preview
+    function updatePreview() {
+        const text = textInput.value.trim();
+        const author = authorInput.value.trim();
+        const source = sourceInput.value.trim();
+        
+        previewText.textContent = text || 'Enter quote text above to see preview...';
+        previewAuthor.textContent = author || 'Author Name';
+        previewSource.textContent = source ? `, ${source}` : '';
+    }
+    
+    // Add event listeners
+    textInput.addEventListener('input', function() {
+        updateCharCount();
+        updatePreview();
+    });
+    
+    authorInput.addEventListener('input', updatePreview);
+    sourceInput.addEventListener('input', updatePreview);
+    
+    // Initial updates
+    updateCharCount();
+    updatePreview();
+    
+    // Form validation
+    document.getElementById('quote-form').addEventListener('submit', function(e) {
+        const text = textInput.value.trim();
+        const author = authorInput.value.trim();
+        
+        if (!text || text.length < 10) {
+            e.preventDefault();
+            alert('Quote text must be at least 10 characters long.');
+            textInput.focus();
+            return false;
+        }
+        
+        if (!author || author.length < 2) {
+            e.preventDefault();
+            alert('Author name must be at least 2 characters long.');
+            authorInput.focus();
+            return false;
+        }
+        
+        return true;
+    });
+});
+</script>
+
+<style>
+.quote-content {
+    font-style: italic;
+    font-size: 1.1rem;
+    line-height: 1.6;
+}
+
+.blockquote {
+    margin: 0;
+}
+
+.blockquote-footer {
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+}
+
+#char-count.text-warning {
+    color: #ffc107 !important;
+}
+
+#char-count.text-danger {
+    color: #dc3545 !important;
+    font-weight: bold;
+}
+
+.form-text {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+</style>
+{% endblock %}
