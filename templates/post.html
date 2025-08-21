@@ -206,37 +206,41 @@
             <h4 class="mb-4">
                 <i class="fas fa-thumbs-up me-2 text-primary"></i>You might also like
             </h4>
-            <div class="row g-3">
+            <div class="row g-4">
                 {% for related_post in related_posts %}
                 <div class="col-md-6">
-                    <div class="card h-100 shadow-sm border-0 related-post-card">
-                        {% if related_post.image_filename %}
-                        <div class="card-img-container">
-                            <img src="{{ url_for('static', filename='uploads/' + related_post.image_filename) }}" 
-                                 class="card-img-top" alt="{{ related_post.title }}"
-                                 style="height: 180px; object-fit: cover;">
-                        </div>
-                        {% endif %}
-                        <div class="card-body">
-                            <h6 class="card-title">
-                                <a href="{% if related_post.slug %}{{ url_for('posts.view_post_by_slug', slug=related_post.slug) }}{% else %}{{ url_for('posts.view_post', post_id=related_post.id) }}{% endif %}" 
-                                   class="text-decoration-none text-dark stretched-link">
-                                    {{ related_post.title }}
-                                </a>
-                            </h6>
-                            {% if related_post.excerpt %}
-                            <p class="card-text text-muted small">
-                                {{ related_post.excerpt[:100] }}{% if related_post.excerpt|length > 100 %}...{% endif %}
-                            </p>
+                    <div class="post-card-dynamic related-post-card-enhanced" data-post-id="{{ related_post.id }}">
+                        <div class="card-image">
+                            {% if related_post.image_filename %}
+                            <img src="{{ url_for('static', filename='uploads/' + related_post.image_filename) }}" alt="{{ related_post.title }}" loading="lazy">
+                            {% else %}
+                            <div class="card-gradient-overlay"></div>
                             {% endif %}
-                            <div class="d-flex justify-content-between align-items-center">
-                                {% if related_post.category_name %}
-                                <span class="badge bg-secondary small">{{ related_post.category_name }}</span>
-                                {% endif %}
-                                <small class="text-muted">
-                                    {{ related_post.created_at[:10] }}
-                                </small>
+                            
+                            <div class="category-badge {{ get_category_color_class(related_post.category_name if related_post.category_name else 'default') }}">
+                                {{ related_post.category_name or 'Article' }}
                             </div>
+                            
+                            <div class="reading-time">
+                                <i class="fas fa-clock"></i> {{ calculate_reading_time(related_post.content or related_post.excerpt) }} min
+                            </div>
+                        </div>
+                        
+                        <div class="card-content-enhanced">
+                            <h5 class="card-title-enhanced">{{ related_post.title }}</h5>
+                            <p class="card-excerpt">{{ truncate_content_smart(related_post.excerpt or related_post.content, 100) }}</p>
+                            
+                            <div class="card-meta">
+                                <span class="card-date">
+                                    <i class="fas fa-calendar"></i> {{ related_post.created_at | format_date }}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="card-actions">
+                            <a href="{% if related_post.slug %}{{ url_for('posts.view_post_by_slug', slug=related_post.slug) }}{% else %}{{ url_for('posts.view_post', post_id=related_post.id) }}{% endif %}" class="action-btn action-btn-primary">
+                                <i class="fas fa-arrow-right"></i> Read Article
+                            </a>
                         </div>
                     </div>
                 </div>
