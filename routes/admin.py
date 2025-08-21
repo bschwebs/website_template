@@ -995,7 +995,7 @@ def create_social_link():
             )
             
             # Log activity
-            admin_username = session.get('admin_user', 'Unknown')
+            admin_username = session.get('admin_username', 'unknown')
             ActivityLogModel.log_activity(
                 admin_username=admin_username,
                 action=f'Created social link: {form.name.data}',
@@ -1037,7 +1037,7 @@ def edit_social_link(link_id):
             )
             
             # Log activity
-            admin_username = session.get('admin_user', 'Unknown')
+            admin_username = session.get('admin_username', 'unknown')
             ActivityLogModel.log_activity(
                 admin_username=admin_username,
                 action=f'Updated social link: {form.name.data}',
@@ -1072,7 +1072,7 @@ def delete_social_link(link_id):
             SocialLinksModel.delete_social_link(link_id)
             
             # Log activity
-            admin_username = session.get('admin_user', 'Unknown')
+            admin_username = session.get('admin_username', 'unknown')
             ActivityLogModel.log_activity(
                 admin_username=admin_username,
                 action=f'Deleted social link: {social_link["name"]}',
@@ -1105,7 +1105,7 @@ def reorder_social_links():
         SocialLinksModel.reorder_social_links(data['orders'])
         
         # Log activity
-        admin_username = session.get('admin_user', 'Unknown')
+        admin_username = session.get('admin_username', 'unknown')
         ActivityLogModel.log_activity(
             admin_username=admin_username,
             action='Reordered social media links',
@@ -1150,7 +1150,7 @@ def admin_create_quote():
             )
             
             # Log activity
-            admin_username = session.get('admin_user', 'Unknown')
+            admin_username = session.get('admin_username', 'unknown')
             ActivityLogModel.log_activity(
                 admin_username=admin_username,
                 action='Created quote',
@@ -1160,7 +1160,8 @@ def admin_create_quote():
             flash('Quote created successfully!', 'success')
             return redirect(url_for('admin.admin_quotes'))
         except Exception as e:
-            flash('Error creating quote.', 'error')
+            current_app.logger.error(f'Error creating quote: {str(e)}')
+            flash(f'Error creating quote: {str(e)}', 'error')
     
     return render_template('admin/quote_form.html', form=form, action='Create')
 
@@ -1189,7 +1190,7 @@ def admin_edit_quote(quote_id):
             )
             
             # Log activity
-            admin_username = session.get('admin_user', 'Unknown')
+            admin_username = session.get('admin_username', 'unknown')
             ActivityLogModel.log_activity(
                 admin_username=admin_username,
                 action='Updated quote',
@@ -1199,7 +1200,8 @@ def admin_edit_quote(quote_id):
             flash('Quote updated successfully!', 'success')
             return redirect(url_for('admin.admin_quotes'))
         except Exception as e:
-            flash('Error updating quote.', 'error')
+            current_app.logger.error(f'Error updating quote: {str(e)}')
+            flash(f'Error updating quote: {str(e)}', 'error')
     
     # Pre-populate form
     if request.method == 'GET':
@@ -1229,7 +1231,7 @@ def admin_delete_quote(quote_id):
             QuoteModel.delete_quote(quote_id)
             
             # Log activity
-            admin_username = session.get('admin_user', 'Unknown')
+            admin_username = session.get('admin_username', 'unknown')
             ActivityLogModel.log_activity(
                 admin_username=admin_username,
                 action='Deleted quote',
@@ -1255,7 +1257,7 @@ def admin_toggle_quote(quote_id):
         QuoteModel.toggle_active(quote_id)
         
         # Log activity
-        admin_username = session.get('admin_user', 'Unknown')
+        admin_username = session.get('admin_username', 'unknown')
         new_status = 'activated' if not quote['is_active'] else 'deactivated'
         ActivityLogModel.log_activity(
             admin_username=admin_username,
@@ -1282,7 +1284,7 @@ def admin_reorder_quotes():
         QuoteModel.reorder_quotes(data['orders'])
         
         # Log activity
-        admin_username = session.get('admin_user', 'Unknown')
+        admin_username = session.get('admin_username', 'unknown')
         ActivityLogModel.log_activity(
             admin_username=admin_username,
             action='Reordered quotes',

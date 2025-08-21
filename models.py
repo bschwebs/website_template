@@ -955,12 +955,12 @@ class SocialLinksModel:
     def create_social_link(name, url, icon_class, display_order=0, is_active=True):
         """Create a new social link."""
         db = get_db()
-        db.execute('''
+        cursor = db.execute('''
             INSERT INTO social_links (name, url, icon_class, display_order, is_active) 
             VALUES (?, ?, ?, ?, ?)
         ''', (name, url, icon_class, display_order, is_active))
         db.commit()
-        return db.lastrowid
+        return cursor.lastrowid
     
     @staticmethod
     def update_social_link(link_id, name, url, icon_class, display_order=0, is_active=True):
@@ -1158,12 +1158,12 @@ class PostTemplateModel:
     def create_template(name, description, content_template):
         """Create a new post template."""
         db = get_db()
-        db.execute('''
+        cursor = db.execute('''
             INSERT INTO post_templates (name, description, content_template)
             VALUES (?, ?, ?)
         ''', (name, description, content_template))
         db.commit()
-        return db.lastrowid
+        return cursor.lastrowid
     
     @staticmethod
     def update_template(template_id, name, description, content_template):
@@ -1217,12 +1217,12 @@ class ImageGalleryModel:
     def add_image(filename, original_filename, alt_text=None, caption=None, file_size=None, width=None, height=None):
         """Add an image to the gallery."""
         db = get_db()
-        db.execute('''
+        cursor = db.execute('''
             INSERT INTO image_gallery (filename, original_filename, alt_text, caption, file_size, width, height)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         ''', (filename, original_filename, alt_text, caption, file_size, width, height))
         db.commit()
-        return db.lastrowid
+        return cursor.lastrowid
     
     @staticmethod
     def update_image(image_id, alt_text=None, caption=None):
@@ -1377,12 +1377,12 @@ class QuoteModel:
     def create_quote(text, author, source=None, language='en', is_active=True, display_order=0):
         """Create a new quote."""
         db = get_db()
-        db.execute('''
+        cursor = db.execute('''
             INSERT INTO quotes (text, author, source, language, is_active, display_order)
             VALUES (?, ?, ?, ?, ?, ?)
         ''', (text, author, source, language, is_active, display_order))
         db.commit()
-        return db.lastrowid
+        return cursor.lastrowid
     
     @staticmethod
     def update_quote(quote_id, text, author, source=None, language='en', is_active=True, display_order=0):
