@@ -24,7 +24,10 @@
       "Bash(npm install)",
       "Bash(git commit:*)",
       "Bash(find:*)",
-      "Bash(true)"
+      "Bash(true)",
+      "Bash(mkdir:*)",
+      "Bash(set FLASK_APP=app.py)",
+      "Bash(del migrations003_add_user_preferences.py)"
     ],
     "deny": [],
     "ask": [],

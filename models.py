@@ -23,7 +23,20 @@ def close_db(exception):
 
 
 def init_db():
-    """Initialize the database with tables and default data."""
+    """Initialize the database using the migration system."""
+    from migrations.migration import migration_manager
+    
+    # Apply all pending migrations
+    results = migration_manager.migrate_up()
+    
+    # Create default data if needed
+    _create_default_data()
+    
+    return results
+
+
+def init_db_old():
+    """OLD Initialize the database with tables and default data."""
     with current_app.app_context():
         db = get_db()
         db.executescript('''
@@ -330,6 +343,34 @@ def init_db():
                           (text, author, source, language, 1))
         
         db.commit()
+
+
+def _create_default_data():
+    """Create default data after database initialization."""
+    db = get_db()
+    
+    # Create default admin user if none exists
+    admin_exists = db.execute('SELECT COUNT(*) FROM admin_users').fetchone()[0]
+    if admin_exists == 0:
+        admin_password_hash = generate_password_hash('admin123')
+        db.execute('INSERT INTO admin_users (username, password_hash) VALUES (?, ?)', 
+                  ('admin', admin_password_hash))
+    
+    # Create default categories for articles
+    categories_exist = db.execute('SELECT COUNT(*) FROM categories').fetchone()[0]
+    if categories_exist == 0:
+        db.execute('INSERT INTO categories (name, slug, description) VALUES (?, ?, ?)', 
+                  ('Introduction', 'introduction', 'Learn more about Japan and this blog'))
+    
+    db.commit()
+
+
+def init_db_legacy():
+    """Legacy database initialization - kept for compatibility."""
+    # This is the old init_db function, renamed for backward compatibility
+    # New applications should use the migration system instead
+    with current_app.app_context():
+        _create_default_data()
 
 
 class PostModel:

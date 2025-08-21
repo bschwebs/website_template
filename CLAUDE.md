@@ -18,8 +18,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Database Operations
 - **Database file**: `content.db` (SQLite)
-- **Initialize/reset database**: Delete `content.db` and restart application
-- **Fix database issues**: Run `python fix_database.py` if it exists
+- **Migration system**: Use `python -m flask db <command>` for database management
+- **Initialize database**: `python -m flask db init` (applies all migrations)
+- **Check migration status**: `python -m flask db status`
+- **Apply migrations**: `python -m flask db migrate`
+- **Create new migration**: `python -m flask db create-migration "name" --description "desc"`
+- **Backup database**: `python -m flask db backup`
+- **Reset database**: `python -m flask db reset` (⚠️ deletes all data)
 
 ## Architecture Overview
 

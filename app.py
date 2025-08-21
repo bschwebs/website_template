@@ -16,6 +16,14 @@ def create_app():
     # Initialize CSRF protection
     csrf = CSRFProtect(app)
     
+    # Initialize CLI commands
+    from cli import init_cli
+    init_cli(app)
+    
+    # Initialize migration manager
+    from migrations.migration import migration_manager
+    migration_manager.init_app(app)
+    
     # Add custom template filters
     @app.template_filter('striptags')
     def strip_tags(text):
