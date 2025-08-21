@@ -7,7 +7,7 @@
 
   User Experience:
   - Search functionality with filters (by date, category, tags)
-  - Related posts suggestions at the end of articles
+  - [x] Related posts suggestions at the end of articles
   - Reading time estimation for posts
   - Social media sharing buttons on posts
   - Comment system (if desired for engagement)

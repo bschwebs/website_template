@@ -22,8 +22,12 @@ def view_post_by_slug(slug):
     
     # Get tags for this post
     tags = PostModel.get_post_tags(post['id'])
+    
+    # Get related posts
+    related_posts = PostModel.get_related_posts(post['id'], limit=4)
+    
     form = DeleteForm()
-    return render_template('post.html', post=post, tags=tags, form=form)
+    return render_template('post.html', post=post, tags=tags, related_posts=related_posts, form=form)
 
 
 @posts.route('/post/<int:post_id>')
@@ -40,8 +44,12 @@ def view_post(post_id):
     
     # Get tags for this post
     tags = PostModel.get_post_tags(post['id'])
+    
+    # Get related posts
+    related_posts = PostModel.get_related_posts(post['id'], limit=4)
+    
     form = DeleteForm()
-    return render_template('post.html', post=post, tags=tags, form=form)
+    return render_template('post.html', post=post, tags=tags, related_posts=related_posts, form=form)
 
 
 @posts.route('/create', methods=['GET', 'POST'])

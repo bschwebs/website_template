@@ -798,6 +798,53 @@ class PostModel:
             params.append(date_to)
         
         return db.execute(count_query, params).fetchone()[0]
+    
+    @staticmethod
+    def get_related_posts(post_id, limit=4):
+        """Get related posts based on shared tags and category."""
+        db = get_db()
+        
+        # First get the current post's category and tags
+        current_post = db.execute('SELECT category_id, post_type FROM posts WHERE id = ?', (post_id,)).fetchone()
+        if not current_post:
+            return []
+        
+        # Get related posts using a weighted scoring system
+        query = '''
+            SELECT DISTINCT p.*, c.name as category_name, c.slug as category_slug,
+                   -- Scoring system: category match = 10 points, each shared tag = 3 points
+                   (CASE WHEN p.category_id = ? THEN 10 ELSE 0 END) +
+                   (SELECT COUNT(*) * 3 FROM post_tags pt1 
+                    JOIN post_tags pt2 ON pt1.tag_id = pt2.tag_id 
+                    WHERE pt1.post_id = ? AND pt2.post_id = p.id) as relevance_score
+            FROM posts p
+            LEFT JOIN categories c ON p.category_id = c.id
+            WHERE p.id != ? 
+            AND p.status = 'published'
+            AND p.post_type = ?
+            AND (p.publish_date IS NULL OR p.publish_date <= CURRENT_TIMESTAMP)
+            AND (
+                p.category_id = ? OR
+                p.id IN (
+                    SELECT pt2.post_id FROM post_tags pt1
+                    JOIN post_tags pt2 ON pt1.tag_id = pt2.tag_id
+                    WHERE pt1.post_id = ? AND pt2.post_id != ?
+                )
+            )
+            ORDER BY relevance_score DESC, p.created_at DESC
+            LIMIT ?
+        '''
+        
+        return db.execute(query, (
+            current_post['category_id'],  # For scoring
+            post_id,                      # For tag matching in scoring
+            post_id,                      # Exclude current post
+            current_post['post_type'],    # Same post type
+            current_post['category_id'],  # Category match condition
+            post_id,                      # Tag matching condition
+            post_id,                      # Exclude from tag matching
+            limit
+        )).fetchall()
 
 
 class TagModel:
