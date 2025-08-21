@@ -67,6 +67,36 @@
                 </div>
             </div>
             
+            <!-- SEO Options -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-search me-2"></i>SEO Settings</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        {{ form.meta_description.label(class="form-label") }}
+                        {{ form.meta_description(class="form-control") }}
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>This description appears in search engine results. Keep it under 160 characters.
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        {{ form.meta_keywords.label(class="form-label") }}
+                        {{ form.meta_keywords(class="form-control") }}
+                        <div class="form-text">
+                            <i class="fas fa-tags me-1"></i>SEO keywords separated by commas (optional)
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        {{ form.canonical_url.label(class="form-label") }}
+                        {{ form.canonical_url(class="form-control") }}
+                        <div class="form-text">
+                            <i class="fas fa-link me-1"></i>Canonical URL for this post (optional, for avoiding duplicate content)
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Publishing Options -->
             <div class="card mb-4">
                 <div class="card-header">

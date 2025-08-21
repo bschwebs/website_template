@@ -3,7 +3,7 @@ Admin routes for the Story Hub application.
 """
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app, jsonify, send_file, make_response
 from flask_wtf.csrf import validate_csrf
-from models import PostModel, AdminModel, TagModel, CategoryModel, EmailConfigModel, ContactModel, AboutModel, PostTemplateModel, ImageGalleryModel, ActivityLogModel, SocialLinksModel, QuoteModel
+from models import PostModel, AdminModel, TagModel, CategoryModel, EmailConfigModel, ContactModel, AboutModel, PostTemplateModel, ImageGalleryModel, ActivityLogModel, SocialLinksModel, QuoteModel, AnalyticsModel
 from forms import DeleteForm, CategoryForm, DeleteCategoryForm, ChangePasswordForm, AboutForm, PostTemplateForm, ImageGalleryForm, ImageEditForm, ImageSearchForm, BulkDeleteForm, SocialLinkForm, DeleteSocialLinkForm, QuoteForm, DeleteQuoteForm
 from utils import admin_required, delete_file, save_uploaded_file
 import os
@@ -55,13 +55,19 @@ def admin_dashboard():
         if not has_warnings:
             quality_stats['good'] += 1
     
+    # Get analytics summary
+    analytics_summary = AnalyticsModel.get_analytics_summary()
+    popular_posts = AnalyticsModel.get_popular_posts(limit=5)
+    
     return render_template('admin/dashboard.html', 
                          posts=posts, 
                          stats=stats, 
                          categories=categories,
                          recent_activities=recent_activities,
                          recent_contact_messages=recent_contact_messages,
-                         quality_stats=quality_stats)
+                         quality_stats=quality_stats,
+                         analytics_summary=analytics_summary,
+                         popular_posts=popular_posts)
 
 
 @admin.route('/admin/posts')
@@ -1287,3 +1293,43 @@ def admin_reorder_quotes():
         
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@admin.route('/admin/analytics')
+@admin_required
+def admin_analytics():
+    """Analytics dashboard."""
+    # Get analytics summary
+    analytics_summary = AnalyticsModel.get_analytics_summary()
+    
+    # Get daily stats for the last 30 days
+    daily_stats = AnalyticsModel.get_daily_stats(days=30)
+    
+    # Get popular content
+    popular_posts = AnalyticsModel.get_popular_posts(limit=10)
+    popular_pages = AnalyticsModel.get_popular_pages(limit=10)
+    recent_referrers = AnalyticsModel.get_recent_referrers(limit=10)
+    
+    return render_template('admin/analytics.html',
+                         analytics_summary=analytics_summary,
+                         daily_stats=daily_stats,
+                         popular_posts=popular_posts,
+                         popular_pages=popular_pages,
+                         recent_referrers=recent_referrers)
+
+
+@admin.route('/admin/analytics/api/daily-stats')
+@admin_required
+def admin_analytics_api_daily():
+    """API endpoint for daily analytics chart data."""
+    days = request.args.get('days', 30, type=int)
+    daily_stats = AnalyticsModel.get_daily_stats(days=days)
+    
+    # Format data for charts
+    chart_data = {
+        'labels': [stat['date'] for stat in reversed(daily_stats)],
+        'views': [stat['total_views'] for stat in reversed(daily_stats)],
+        'unique_visitors': [stat['unique_visitors'] for stat in reversed(daily_stats)]
+    }
+    
+    return jsonify(chart_data)

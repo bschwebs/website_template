@@ -21,7 +21,10 @@
       "mcp__playwright__browser_press_key",
       "mcp__playwright__browser_handle_dialog",
       "Bash(npx playwright test:*)",
-      "Bash(npm install)"
+      "Bash(npm install)",
+      "Bash(git commit:*)",
+      "Bash(find:*)",
+      "Bash(true)"
     ],
     "deny": [],
     "ask": [],

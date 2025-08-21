@@ -93,6 +93,72 @@ def create_app():
     # Register teardown handler
     app.teardown_appcontext(close_db)
     
+    # Add analytics tracking middleware
+    @app.before_request
+    def track_page_views():
+        """Track page views for analytics."""
+        from flask import request, g
+        from models import AnalyticsModel
+        import re
+        
+        # Skip tracking for admin pages, static files, and API endpoints
+        if (request.endpoint and 
+            (request.endpoint.startswith('admin.') or 
+             request.endpoint.startswith('static') or
+             request.endpoint.startswith('auth.') or
+             request.path.startswith('/admin/') or
+             request.path.startswith('/static/') or
+             request.path.endswith('.xml') or
+             request.path.endswith('.txt') or
+             request.path.endswith('.atom') or
+             request.path.endswith('.json'))):
+            return
+        
+        # Get request information
+        url = request.url
+        page_title = None
+        user_agent = request.headers.get('User-Agent', '')
+        ip_address = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
+        referrer = request.headers.get('Referer', '')
+        post_id = None
+        
+        # Extract post ID from URL if this is a post view
+        if request.endpoint == 'posts.view_post':
+            post_id = request.view_args.get('post_id')
+        elif request.endpoint == 'posts.view_post_by_slug':
+            from models import PostModel
+            slug = request.view_args.get('slug')
+            if slug:
+                post = PostModel.get_post_by_slug(slug)
+                if post:
+                    post_id = post['id']
+                    page_title = post['title']
+        
+        # Set page title for other pages
+        if not page_title:
+            if request.endpoint == 'main.index':
+                page_title = 'Home'
+            elif request.endpoint == 'main.articles':
+                page_title = 'Articles'
+            elif request.endpoint == 'search.search_posts':
+                page_title = 'Search'
+            else:
+                page_title = request.endpoint or 'Unknown'
+        
+        # Track the page view
+        try:
+            AnalyticsModel.track_page_view(
+                url=url,
+                page_title=page_title,
+                user_agent=user_agent,
+                ip_address=ip_address,
+                referrer=referrer,
+                post_id=post_id
+            )
+        except Exception as e:
+            # Don't break the app if analytics fails
+            app.logger.error(f"Analytics tracking error: {e}")
+    
     # Register blueprints
     from routes.main import main
     from routes.posts import posts

@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics | Admin Panel{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3">
+                <i class="fas fa-chart-line me-2"></i>Analytics Dashboard
+            </h1>
+            <a href="{{ url_for('admin.admin_dashboard') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+            </a>
+        </div>
+
+        <!-- Analytics Summary Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3 mb-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h5 class="card-title">Total Views</h5>
+                                <h3 class="mb-0">{{ analytics_summary.total_views }}</h3>
+                                <small>All time</small>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-eye fa-2x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h5 class="card-title">Unique Visitors</h5>
+                                <h3 class="mb-0">{{ analytics_summary.unique_visitors }}</h3>
+                                <small>All time</small>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-users fa-2x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h5 class="card-title">Today's Views</h5>
+                                <h3 class="mb-0">{{ analytics_summary.today_views }}</h3>
+                                <small>{{ analytics_summary.today_unique }} unique</small>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-calendar-day fa-2x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card bg-warning text-dark">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h5 class="card-title">Posts with Views</h5>
+                                <h3 class="mb-0">{{ analytics_summary.posts_with_views }}</h3>
+                                <small>Have been viewed</small>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-file-alt fa-2x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-area me-2"></i>Traffic Overview (Last 30 Days)
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="trafficChart" height="100"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Popular Content Row -->
+        <div class="row">
+            <!-- Popular Posts -->
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-fire me-2"></i>Most Popular Posts
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if popular_posts %}
+                            <div class="list-group list-group-flush">
+                                {% for post in popular_posts %}
+                                <div class="list-group-item d-flex justify-content-between align-items-start">
+                                    <div class="ms-2 me-auto">
+                                        <div class="fw-bold">
+                                            <a href="{{ url_for('posts.view_post_by_slug', slug=post.slug) if post.slug else url_for('posts.view_post', post_id=post.id) }}" 
+                                               target="_blank" class="text-decoration-none">
+                                                {{ post.title }}
+                                            </a>
+                                        </div>
+                                        <small class="text-muted">{{ post.unique_views }} unique views</small>
+                                    </div>
+                                    <span class="badge bg-primary rounded-pill">{{ post.views_count }}</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-muted text-center py-3">No post analytics data available yet.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Popular Pages -->
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-globe me-2"></i>Most Popular Pages
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if popular_pages %}
+                            <div class="list-group list-group-flush">
+                                {% for page in popular_pages %}
+                                <div class="list-group-item d-flex justify-content-between align-items-start">
+                                    <div class="ms-2 me-auto">
+                                        <div class="fw-bold">
+                                            <a href="{{ page.url }}" target="_blank" class="text-decoration-none">
+                                                {{ page.page_title or page.url }}
+                                            </a>
+                                        </div>
+                                        <small class="text-muted">{{ page.unique_views }} unique views</small>
+                                    </div>
+                                    <span class="badge bg-success rounded-pill">{{ page.views }}</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-muted text-center py-3">No page analytics data available yet.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Referrers -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-external-link-alt me-2"></i>Top Referrers
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if recent_referrers %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Referrer</th>
+                                            <th>Visits</th>
+                                            <th>Last Visit</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for referrer in recent_referrers %}
+                                        <tr>
+                                            <td>
+                                                <a href="{{ referrer.referrer }}" target="_blank" class="text-decoration-none">
+                                                    {{ referrer.referrer }}
+                                                </a>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-info">{{ referrer.count }}</span>
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">{{ referrer.last_visit }}</small>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <p class="text-muted text-center py-3">No referrer data available yet.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Traffic Chart
+    const ctx = document.getElementById('trafficChart').getContext('2d');
+    
+    // Fetch data for chart
+    fetch('{{ url_for("admin.admin_analytics_api_daily") }}')
+        .then(response => response.json())
+        .then(data => {
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Total Views',
+                        data: data.views,
+                        borderColor: 'rgb(75, 192, 192)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                        tension: 0.1,
+                        fill: true
+                    }, {
+                        label: 'Unique Visitors',
+                        data: data.unique_visitors,
+                        borderColor: 'rgb(255, 99, 132)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                        tension: 0.1,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Daily Traffic Overview'
+                        },
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    }
+                }
+            });
+        })
+        .catch(error => {
+            console.error('Error loading chart data:', error);
+            document.getElementById('trafficChart').innerHTML = '<p class="text-center text-muted py-4">Unable to load chart data</p>';
+        });
+});
+</script>
+{% endblock %}

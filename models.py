@@ -157,6 +157,40 @@ def init_db():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
+            
+            CREATE TABLE IF NOT EXISTS page_views (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                url TEXT NOT NULL,
+                page_title TEXT,
+                user_agent TEXT,
+                ip_address TEXT,
+                referrer TEXT,
+                post_id INTEGER,
+                view_date DATE NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (post_id) REFERENCES posts (id) ON DELETE SET NULL
+            );
+            
+            CREATE TABLE IF NOT EXISTS daily_analytics (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                date DATE NOT NULL UNIQUE,
+                total_views INTEGER DEFAULT 0,
+                unique_visitors INTEGER DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            
+            CREATE TABLE IF NOT EXISTS post_analytics (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                post_id INTEGER NOT NULL,
+                views_count INTEGER DEFAULT 0,
+                unique_views INTEGER DEFAULT 0,
+                last_viewed TIMESTAMP,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (post_id) REFERENCES posts (id) ON DELETE CASCADE,
+                UNIQUE(post_id)
+            );
         ''')
         
         # Create default admin user if none exists
@@ -198,6 +232,22 @@ def init_db():
             db.execute('SELECT template_id FROM posts LIMIT 1')
         except sqlite3.OperationalError:
             db.execute('ALTER TABLE posts ADD COLUMN template_id INTEGER')
+        
+        # Migration: Add SEO fields if they don't exist
+        try:
+            db.execute('SELECT meta_description FROM posts LIMIT 1')
+        except sqlite3.OperationalError:
+            db.execute('ALTER TABLE posts ADD COLUMN meta_description TEXT')
+        
+        try:
+            db.execute('SELECT meta_keywords FROM posts LIMIT 1')
+        except sqlite3.OperationalError:
+            db.execute('ALTER TABLE posts ADD COLUMN meta_keywords TEXT')
+        
+        try:
+            db.execute('SELECT canonical_url FROM posts LIMIT 1')
+        except sqlite3.OperationalError:
+            db.execute('ALTER TABLE posts ADD COLUMN canonical_url TEXT')
         
         # Create default categories for articles
         categories_exist = db.execute('SELECT COUNT(*) FROM categories').fetchone()[0]
@@ -385,25 +435,25 @@ class PostModel:
         return db.execute('SELECT * FROM posts WHERE slug = ?', (slug,)).fetchone()
     
     @staticmethod
-    def create_post(title, content, excerpt, image_filename, post_type, slug, image_position_x='center', image_position_y='center', category_id=None, status='published', publish_date=None, template_id=None):
+    def create_post(title, content, excerpt, image_filename, post_type, slug, image_position_x='center', image_position_y='center', category_id=None, status='published', publish_date=None, template_id=None, meta_description=None, meta_keywords=None, canonical_url=None):
         """Create a new post."""
         db = get_db()
         cursor = db.execute('''
-            INSERT INTO posts (title, content, excerpt, image_filename, image_position_x, image_position_y, post_type, slug, category_id, status, publish_date, template_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (title, content, excerpt, image_filename, image_position_x, image_position_y, post_type, slug, category_id, status, publish_date, template_id))
+            INSERT INTO posts (title, content, excerpt, image_filename, image_position_x, image_position_y, post_type, slug, category_id, status, publish_date, template_id, meta_description, meta_keywords, canonical_url)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (title, content, excerpt, image_filename, image_position_x, image_position_y, post_type, slug, category_id, status, publish_date, template_id, meta_description, meta_keywords, canonical_url))
         db.commit()
         return cursor.lastrowid
     
     @staticmethod
-    def update_post(post_id, title, content, excerpt, image_filename, post_type, slug, image_position_x='center', image_position_y='center', category_id=None, status='published', publish_date=None, template_id=None):
+    def update_post(post_id, title, content, excerpt, image_filename, post_type, slug, image_position_x='center', image_position_y='center', category_id=None, status='published', publish_date=None, template_id=None, meta_description=None, meta_keywords=None, canonical_url=None):
         """Update an existing post."""
         db = get_db()
         db.execute('''
             UPDATE posts
-            SET title = ?, content = ?, excerpt = ?, image_filename = ?, image_position_x = ?, image_position_y = ?, post_type = ?, slug = ?, category_id = ?, status = ?, publish_date = ?, template_id = ?, updated_at = CURRENT_TIMESTAMP
+            SET title = ?, content = ?, excerpt = ?, image_filename = ?, image_position_x = ?, image_position_y = ?, post_type = ?, slug = ?, category_id = ?, status = ?, publish_date = ?, template_id = ?, meta_description = ?, meta_keywords = ?, canonical_url = ?, updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
-        ''', (title, content, excerpt, image_filename, image_position_x, image_position_y, post_type, slug, category_id, status, publish_date, template_id, post_id))
+        ''', (title, content, excerpt, image_filename, image_position_x, image_position_y, post_type, slug, category_id, status, publish_date, template_id, meta_description, meta_keywords, canonical_url, post_id))
         db.commit()
     
     @staticmethod
@@ -1387,3 +1437,143 @@ class QuoteModel:
         """Count active quotes."""
         db = get_db()
         return db.execute('SELECT COUNT(*) FROM quotes WHERE is_active = 1').fetchone()[0]
+
+
+class AnalyticsModel:
+    """Model for handling analytics and page view tracking."""
+    
+    @staticmethod
+    def track_page_view(url, page_title=None, user_agent=None, ip_address=None, referrer=None, post_id=None):
+        """Track a page view."""
+        from datetime import date
+        db = get_db()
+        view_date = date.today()
+        
+        # Record the page view
+        db.execute('''
+            INSERT INTO page_views (url, page_title, user_agent, ip_address, referrer, post_id, view_date)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (url, page_title, user_agent, ip_address, referrer, post_id, view_date))
+        
+        # Update daily analytics
+        db.execute('''
+            INSERT OR REPLACE INTO daily_analytics (date, total_views, unique_visitors)
+            VALUES (?, 
+                COALESCE((SELECT total_views FROM daily_analytics WHERE date = ?), 0) + 1,
+                (SELECT COUNT(DISTINCT ip_address) FROM page_views WHERE view_date = ?)
+            )
+        ''', (view_date, view_date, view_date))
+        
+        # Update post analytics if this is a post view
+        if post_id:
+            db.execute('''
+                INSERT OR REPLACE INTO post_analytics (post_id, views_count, unique_views, last_viewed)
+                VALUES (?, 
+                    COALESCE((SELECT views_count FROM post_analytics WHERE post_id = ?), 0) + 1,
+                    (SELECT COUNT(DISTINCT ip_address) FROM page_views WHERE post_id = ?),
+                    CURRENT_TIMESTAMP
+                )
+            ''', (post_id, post_id, post_id))
+        
+        db.commit()
+    
+    @staticmethod
+    def get_daily_stats(days=30):
+        """Get daily analytics for the last N days."""
+        db = get_db()
+        return db.execute('''
+            SELECT date, total_views, unique_visitors
+            FROM daily_analytics
+            ORDER BY date DESC
+            LIMIT ?
+        ''', (days,)).fetchall()
+    
+    @staticmethod
+    def get_total_views():
+        """Get total page views."""
+        db = get_db()
+        result = db.execute('SELECT COUNT(*) FROM page_views').fetchone()
+        return result[0] if result else 0
+    
+    @staticmethod
+    def get_unique_visitors():
+        """Get unique visitors count."""
+        db = get_db()
+        result = db.execute('SELECT COUNT(DISTINCT ip_address) FROM page_views').fetchone()
+        return result[0] if result else 0
+    
+    @staticmethod
+    def get_popular_posts(limit=10):
+        """Get most popular posts by view count."""
+        db = get_db()
+        return db.execute('''
+            SELECT p.*, pa.views_count, pa.unique_views, pa.last_viewed
+            FROM posts p
+            JOIN post_analytics pa ON p.id = pa.post_id
+            ORDER BY pa.views_count DESC
+            LIMIT ?
+        ''', (limit,)).fetchall()
+    
+    @staticmethod
+    def get_recent_referrers(limit=10):
+        """Get recent referrer URLs."""
+        db = get_db()
+        return db.execute('''
+            SELECT referrer, COUNT(*) as count, MAX(created_at) as last_visit
+            FROM page_views
+            WHERE referrer IS NOT NULL AND referrer != ''
+            GROUP BY referrer
+            ORDER BY count DESC, last_visit DESC
+            LIMIT ?
+        ''', (limit,)).fetchall()
+    
+    @staticmethod
+    def get_popular_pages(limit=10):
+        """Get most popular pages by view count."""
+        db = get_db()
+        return db.execute('''
+            SELECT url, page_title, COUNT(*) as views, COUNT(DISTINCT ip_address) as unique_views
+            FROM page_views
+            GROUP BY url
+            ORDER BY views DESC
+            LIMIT ?
+        ''', (limit,)).fetchall()
+    
+    @staticmethod
+    def get_post_analytics(post_id):
+        """Get analytics for a specific post."""
+        db = get_db()
+        return db.execute('''
+            SELECT * FROM post_analytics WHERE post_id = ?
+        ''', (post_id,)).fetchone()
+    
+    @staticmethod
+    def get_analytics_summary():
+        """Get a summary of analytics data."""
+        db = get_db()
+        
+        # Get today's stats
+        from datetime import date
+        today = date.today()
+        today_stats = db.execute('''
+            SELECT total_views, unique_visitors
+            FROM daily_analytics
+            WHERE date = ?
+        ''', (today,)).fetchone()
+        
+        # Get total stats
+        total_views = AnalyticsModel.get_total_views()
+        unique_visitors = AnalyticsModel.get_unique_visitors()
+        
+        # Get post count with views
+        posts_with_views = db.execute('''
+            SELECT COUNT(*) FROM post_analytics WHERE views_count > 0
+        ''').fetchone()[0]
+        
+        return {
+            'total_views': total_views,
+            'unique_visitors': unique_visitors,
+            'today_views': today_stats['total_views'] if today_stats else 0,
+            'today_unique': today_stats['unique_visitors'] if today_stats else 0,
+            'posts_with_views': posts_with_views
+        }

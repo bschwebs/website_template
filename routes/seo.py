@@ -12,11 +12,15 @@ seo = Blueprint('seo', __name__)
 def sitemap():
     """Generate XML sitemap for search engines."""
     
-    # Get all posts
-    posts = PostModel.get_all_posts()
+    # Get all published posts
+    posts = PostModel.get_articles_paginated(page=1, per_page=1000)
     
     # Get all tags
     tags = TagModel.get_all_tags()
+    
+    # Get categories
+    from models import CategoryModel
+    categories = CategoryModel.get_categories_with_posts()
     
     # Generate sitemap XML
     sitemap_xml = """<?xml version="1.0" encoding="UTF-8"?>
@@ -64,6 +68,16 @@ def sitemap():
     </url>
     {% endfor %}
     
+    <!-- Category pages -->
+    {% for category in categories %}
+    <url>
+        <loc>{{ url_for('main.articles', category=category.slug, _external=True) }}</loc>
+        <lastmod>{{ last_modified }}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    {% endfor %}
+    
     <!-- Tag pages -->
     {% for tag in tags %}
     <url>
@@ -86,6 +100,7 @@ def sitemap():
         sitemap_xml,
         posts=posts,
         tags=tags,
+        categories=categories,
         last_modified=last_modified
     )
     
@@ -142,8 +157,8 @@ Policy: {{ url_for('main.index', _external=True) }}/security-policy
 def rss_feed():
     """Generate RSS feed for the blog."""
     
-    # Get recent posts
-    posts = PostModel.get_all_posts(20)  # Limit to 20 most recent posts
+    # Get recent published posts
+    posts = PostModel.get_articles_paginated(page=1, per_page=20)  # Limit to 20 most recent published posts
     
     rss_xml = """<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
@@ -180,3 +195,48 @@ def rss_feed():
     )
     
     return Response(rendered_rss, mimetype='application/rss+xml')
+
+
+@seo.route('/feed.atom')
+def atom_feed():
+    """Generate Atom feed for the blog."""
+    
+    # Get recent published posts
+    posts = PostModel.get_articles_paginated(page=1, per_page=20)  # Limit to 20 most recent published posts
+    
+    atom_xml = """<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+    <title>Story Hub - Latest Posts</title>
+    <link href="{{ url_for('main.index', _external=True) }}" rel="alternate"/>
+    <link href="{{ url_for('seo.atom_feed', _external=True) }}" rel="self" type="application/atom+xml"/>
+    <id>{{ url_for('main.index', _external=True) }}</id>
+    <updated>{{ build_date_iso }}</updated>
+    <subtitle>Discover insightful articles about Japanese history and culture from our community of writers.</subtitle>
+    <generator>Story Hub</generator>
+    
+    {% for post in posts %}
+    <entry>
+        <title>{{ post.title }}</title>
+        <link href="{{ url_for('posts.view_post_by_slug', slug=post.slug, _external=True) if post.slug else url_for('posts.view_post', post_id=post.id, _external=True) }}"/>
+        <id>{{ url_for('posts.view_post_by_slug', slug=post.slug, _external=True) if post.slug else url_for('posts.view_post', post_id=post.id, _external=True) }}</id>
+        <published>{{ post.created_at }}</published>
+        <updated>{{ post.updated_at or post.created_at }}</updated>
+        <summary type="html"><![CDATA[{{ post.excerpt if post.excerpt else (post.content|striptags)[:200] }}]]></summary>
+        <content type="html"><![CDATA[{{ post.content }}]]></content>
+        <category term="article"/>
+        {% if post.image_filename %}
+        <link rel="enclosure" href="{{ url_for('static', filename='uploads/' + post.image_filename, _external=True) }}" type="image/jpeg"/>
+        {% endif %}
+    </entry>
+    {% endfor %}
+</feed>"""
+    
+    build_date_iso = datetime.now().isoformat() + 'Z'
+    
+    rendered_atom = render_template_string(
+        atom_xml,
+        posts=posts,
+        build_date_iso=build_date_iso
+    )
+    
+    return Response(rendered_atom, mimetype='application/atom+xml')

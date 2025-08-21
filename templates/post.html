@@ -2,15 +2,15 @@
 
 {% block title %}{{ post.title }} | Japan's History{% endblock %}
 
-{% block meta_description %}{{ post.excerpt if post.excerpt else (post.content|striptags)[:160] }}{% endblock %}
+{% block meta_description %}{{ post.meta_description if post.meta_description else (post.excerpt if post.excerpt else (post.content|striptags)[:160]) }}{% endblock %}
 
-{% block meta_keywords %}{% if tags %}{{ tags|map(attribute='name')|join(', ') }}, {% endif %}article, Japan history, blog{% endblock %}
+{% block meta_keywords %}{{ post.meta_keywords if post.meta_keywords else (tags|map(attribute='name')|join(', ') + ', article, Japan history, blog' if tags else 'article, Japan history, blog') }}{% endblock %}
 
-{% block canonical_url %}{{ url_for('posts.view_post_by_slug', slug=post.slug, _external=True) if post.slug else url_for('posts.view_post', post_id=post.id, _external=True) }}{% endblock %}
+{% block canonical_url %}{{ post.canonical_url if post.canonical_url else (url_for('posts.view_post_by_slug', slug=post.slug, _external=True) if post.slug else url_for('posts.view_post', post_id=post.id, _external=True)) }}{% endblock %}
 
 <!-- Open Graph for Posts -->
 {% block og_title %}{{ post.title }}{% endblock %}
-{% block og_description %}{{ post.excerpt if post.excerpt else (post.content|striptags)[:200] }}{% endblock %}
+{% block og_description %}{{ post.meta_description if post.meta_description else (post.excerpt if post.excerpt else (post.content|striptags)[:200]) }}{% endblock %}
 {% block og_type %}article{% endblock %}
 {% block og_url %}{{ url_for('posts.view_post_by_slug', slug=post.slug, _external=True) if post.slug else url_for('posts.view_post', post_id=post.id, _external=True) }}{% endblock %}
 {% block og_image %}{% if post.image_filename %}{{ url_for('static', filename='uploads/' + post.image_filename, _external=True) }}{% else %}{{ url_for('static', filename='uploads/sample1.jpg', _external=True) }}{% endif %}{% endblock %}

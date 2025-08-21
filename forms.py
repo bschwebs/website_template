@@ -29,6 +29,15 @@ class PostForm(FlaskForm):
     status = RadioField('Status', choices=[('draft', 'Save as Draft'), ('published', 'Publish Now')], default='published')
     publish_date = DateTimeLocalField('Publish Date', validators=[Optional()], 
                                     render_kw={"placeholder": "Leave empty to publish immediately"})
+    
+    # SEO Fields
+    meta_description = TextAreaField('Meta Description', validators=[Length(max=160)], 
+                                   render_kw={"placeholder": "Brief description for search engines (160 chars max)", "rows": "3"})
+    meta_keywords = StringField('Meta Keywords', validators=[Length(max=255)], 
+                              render_kw={"placeholder": "SEO keywords separated by commas"})
+    canonical_url = StringField('Canonical URL', validators=[Optional(), URL()], 
+                              render_kw={"placeholder": "Optional: canonical URL for this post"})
+    
     image = FileField('Featured Image')
     image_position_x = SelectField('Image Horizontal Position', 
                                  choices=[('left', 'Left'), ('center', 'Center'), ('right', 'Right')], 

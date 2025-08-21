@@ -130,9 +130,15 @@ def create_post():
                     flash('The Introduction category can only contain one post. Please edit the existing introduction post instead.', 'error')
                     return render_template('create.html', form=form)
         
+        # Get SEO fields
+        meta_description = form.meta_description.data if form.meta_description.data else None
+        meta_keywords = form.meta_keywords.data if form.meta_keywords.data else None
+        canonical_url = form.canonical_url.data if form.canonical_url.data else None
+        
         # Create the post
         PostModel.create_post(title, content, excerpt, image_filename, post_type, slug, 
-                            image_position_x, image_position_y, category_id, status, publish_date, template_id)
+                            image_position_x, image_position_y, category_id, status, publish_date, template_id,
+                            meta_description, meta_keywords, canonical_url)
         
         # Get the newly created post to add tags
         new_post = PostModel.get_post_by_slug(slug)
@@ -188,6 +194,11 @@ def edit_post(post_id):
             form.publish_date.data = datetime.fromisoformat(post['publish_date'].replace('Z', '+00:00')) if 'Z' in post['publish_date'] else datetime.strptime(post['publish_date'], '%Y-%m-%d %H:%M:%S')
         form.image_position_x.data = post['image_position_x'] if post['image_position_x'] else 'center'
         form.image_position_y.data = post['image_position_y'] if post['image_position_y'] else 'center'
+        
+        # Populate SEO fields
+        form.meta_description.data = post.get('meta_description', '')
+        form.meta_keywords.data = post.get('meta_keywords', '')
+        form.canonical_url.data = post.get('canonical_url', '')
         
         # Get existing tags
         existing_tags = PostModel.get_post_tags(post_id)
@@ -281,9 +292,15 @@ def edit_post(post_id):
                     flash('The Introduction category can only contain one post. Please edit the existing introduction post instead.', 'error')
                     return render_template('edit.html', form=form, post=post)
         
+        # Get SEO fields
+        meta_description = form.meta_description.data if form.meta_description.data else None
+        meta_keywords = form.meta_keywords.data if form.meta_keywords.data else None
+        canonical_url = form.canonical_url.data if form.canonical_url.data else None
+        
         # Update the post
         PostModel.update_post(post_id, title, content, excerpt, image_filename, post_type, slug, 
-                            image_position_x, image_position_y, category_id, status, publish_date, template_id)
+                            image_position_x, image_position_y, category_id, status, publish_date, template_id,
+                            meta_description, meta_keywords, canonical_url)
         
         # Update tags
         if form.tags.data is not None:  # Check if tags field was submitted

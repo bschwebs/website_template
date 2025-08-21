@@ -40,6 +40,7 @@
     
     <!-- RSS Feed -->
     <link rel="alternate" type="application/rss+xml" title="Story Hub RSS Feed" href="{{ url_for('seo.rss_feed') }}">
+    <link rel="alternate" type="application/atom+xml" title="Story Hub Atom Feed" href="{{ url_for('seo.atom_feed') }}">
     
     <!-- Structured Data -->
     {% block structured_data %}
@@ -193,6 +194,9 @@
                         <ul class="dropdown-menu dropdown-menu-enhanced dropdown-menu-end">
                             <li><a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('admin.admin_dashboard') }}">
                                 <i class="fas fa-tachometer-alt"></i>Dashboard
+                            </a></li>
+                            <li><a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('admin.admin_analytics') }}">
+                                <i class="fas fa-chart-line"></i>Analytics
                             </a></li>
                             <li><a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('admin.admin_posts') }}">
                                 <i class="fas fa-list"></i>Manage Posts
