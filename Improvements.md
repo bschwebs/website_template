@@ -115,3 +115,104 @@
 ### Wishlist
 - [ ] Mailing list implimentation (Need mail server first)
 - [ ] Postgres db backend upgrades
+
+## SEO & Performance Optimization Roadmap
+
+### High-Impact Improvements (Quick Wins)
+
+#### 1. Image Optimization (Biggest SEO Impact)
+- [ ] Add WebP support for images
+- [ ] Implement lazy loading for all images
+- [ ] Add proper width/height attributes to prevent layout shift
+- [ ] Create responsive image pipeline with srcset
+- [ ] Compress existing uploaded images
+
+#### 2. Performance Resource Hints
+- [ ] Add preload hints for critical CSS and JS
+- [ ] Add dns-prefetch for external domains
+- [ ] Implement preconnect for Google Fonts optimization
+- [ ] Add modulepreload for modern JS modules
+
+#### 3. Enhanced Article Schema (Structured Data)
+- [ ] Add author schema to articles
+- [ ] Include publisher information in structured data
+- [ ] Add article publication and modification times
+- [ ] Implement FAQ schema for relevant content
+
+### Medium-Impact Improvements
+
+#### 4. Breadcrumb Navigation & Schema
+- [ ] Add breadcrumb navigation to post pages
+- [ ] Implement BreadcrumbList structured data
+- [ ] Add breadcrumbs to category and tag pages
+- [ ] Style breadcrumbs to match site design
+
+#### 5. Critical CSS Optimization
+- [ ] Identify above-the-fold CSS (≈2-3KB)
+- [ ] Inline critical CSS in HTML head
+- [ ] Defer non-critical CSS loading
+- [ ] Implement CSS loading strategy
+
+#### 6. Enhanced Meta Tags
+- [ ] Add article-specific Open Graph tags (published_time, modified_time)
+- [ ] Include article:author and article:section meta tags
+- [ ] Add Twitter Cards with article metadata
+- [ ] Implement dynamic meta tag generation based on content type
+
+### Advanced Features (Future)
+
+#### 7. PWA (Progressive Web App) Capabilities
+- [ ] Create web app manifest file
+- [ ] Implement service worker for offline reading
+- [ ] Add install prompt for mobile users
+- [ ] Cache critical resources for offline access
+- [ ] Add push notification support
+
+#### 8. Advanced Image Features
+- [ ] Implement automatic WebP conversion pipeline
+- [ ] Add responsive images with multiple breakpoints
+- [ ] Create image compression workflow
+- [ ] Add support for next-gen image formats (AVIF)
+- [ ] Implement blur-up placeholder effect
+
+#### 9. Performance Monitoring & Analytics
+- [ ] Implement Core Web Vitals tracking
+- [ ] Add Real User Monitoring (RUM)
+- [ ] Set up performance budgets and alerts
+- [ ] Create performance dashboard in admin
+- [ ] Add Lighthouse CI integration
+
+### SEO Technical Enhancements
+
+#### 10. Advanced SEO Features
+- [ ] Add XML sitemaps for images
+- [ ] Implement hreflang for multi-language support (if needed)
+- [ ] Add JSON-LD for organization and website schemas
+- [ ] Create author pages with Person schema
+- [ ] Add review/rating schema for applicable content
+
+#### 11. Content SEO Improvements
+- [ ] Implement related posts algorithm based on content similarity
+- [ ] Add reading progress indicator
+- [ ] Create content clusters and topic authority
+- [ ] Add internal linking suggestions in admin
+- [ ] Implement content freshness tracking
+
+#### 12. Technical SEO Enhancements
+- [ ] Add security headers (CSP, HSTS, etc.)
+- [ ] Implement proper HTTP status codes for all scenarios
+- [ ] Add Google Search Console integration
+- [ ] Create custom 404 page with search functionality
+- [ ] Add redirect management system
+
+**Expected Impact Summary:**
+- Items 1-3: +10-15 points in Lighthouse SEO/Performance scores
+- Items 4-6: +5-8 points in search engine rankings
+- Items 7-12: Enhanced user experience and long-term SEO benefits
+
+**Implementation Priority:**
+1. **Start with Image Optimization** - Biggest immediate impact
+2. **Resource Hints** - Quick performance boost
+3. **Enhanced Schema** - Better search result appearance
+4. **Breadcrumbs** - Improved navigation and SEO
+5. **Advanced features** - Long-term competitive advantage
